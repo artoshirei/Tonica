@@ -395,6 +395,8 @@ jobs:
           echo "seconds=$SECONDS" >> "$GITHUB_OUTPUT"
 
       - name: Generate appcast candidate
+        env:
+          SPARKLE_PRIVATE_ED_KEY: ${{ secrets.SPARKLE_PRIVATE_ED_KEY }}
         shell: bash
         run: |
           set -euo pipefail
