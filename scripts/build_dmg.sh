@@ -81,9 +81,13 @@ if [[ -f "$ICON_SOURCE" ]]; then
   "$(xcrun --find SetFile)" -a C "$MOUNT_POINT" 2>/dev/null || true
 fi
 
+open -ga Finder >/dev/null 2>&1 || true
+
 for _pass in 1 2; do
   osascript <<EOF
+with timeout of 300 seconds
 tell application "Finder"
+  activate
   tell disk "${MOUNT_NAME}"
     open
     delay 1
@@ -117,6 +121,7 @@ tell application "Finder"
     close
   end tell
 end tell
+end timeout
 EOF
   sleep 1
 done
