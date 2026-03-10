@@ -184,10 +184,14 @@ jobs:
             }
             brew install xcodegen
           fi
+          dirname "$(command -v xcodegen)" >> "$GITHUB_PATH"
 
       - name: Generate project
         shell: bash
-        run: xcodegen generate
+        run: |
+          set -euo pipefail
+          export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
+          xcodegen generate
 
       - name: Import Developer ID certificate
         env:
