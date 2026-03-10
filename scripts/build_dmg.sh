@@ -68,6 +68,12 @@ fi
 ditto "$STAGING_DIR/$APP_NAME" "$MOUNT_POINT/$APP_NAME"
 ln -sfn /Applications "$MOUNT_POINT/Applications"
 
+# Give Finder and IconServices a moment to index the copied app bundle before
+# we persist the DMG window layout, otherwise the app tile can get cached with
+# a generic placeholder icon in the mounted installer window.
+sleep 2
+/System/Library/Frameworks/CoreServices.framework/Versions/Current/Frameworks/LaunchServices.framework/Versions/Current/Support/lsregister -f -R "$MOUNT_POINT/$APP_NAME" >/dev/null 2>&1 || true
+
 mkdir -p "$MOUNT_POINT/.background"
 cp "$BACKGROUND_PNG" "$MOUNT_POINT/.background/background.png"
 
@@ -102,7 +108,7 @@ tell application "Finder"
     set position of item "${APP_NAME}" of dmgWindow to {145, 188}
     set position of item "Applications" of dmgWindow to {415, 188}
 
-    update without registering applications
+    update
     delay 2
     close
   end tell
