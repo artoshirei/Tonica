@@ -3,14 +3,14 @@
     <channel>
         <title>Tonica</title>
         <item>
-            <title>1.0.2</title>
-            <pubDate>Tue, 10 Mar 2026 19:52:57 +0000</pubDate>
+            <title>1.0.3</title>
+            <pubDate>Tue, 10 Mar 2026 20:11:28 +0000</pubDate>
             <link>https://artoshi.work/tonica</link>
-            <sparkle:fullReleaseNotesLink>https://github.com/artoshirei/Tonica/releases/tag/v1.0.2</sparkle:fullReleaseNotesLink>
-            <sparkle:version>3</sparkle:version>
-            <sparkle:shortVersionString>1.0.2</sparkle:shortVersionString>
+            <sparkle:fullReleaseNotesLink>https://github.com/artoshirei/Tonica/releases/tag/v1.0.3</sparkle:fullReleaseNotesLink>
+            <sparkle:version>4</sparkle:version>
+            <sparkle:shortVersionString>1.0.3</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <enclosure url="https://github.com/artoshirei/Tonica/releases/download/v1.0.2/Tonica.dmg" length="1644014" type="application/octet-stream" sparkle:edSignature="UKD1VHd7g+vZto2V+2/RyDuzzVffn+ciY/2R9yu6TkJLHY4PK1gghUfInLeFEsejrA9MjqgA5yJYUXGhvZIVCg=="/>
+            <enclosure url="https://github.com/artoshirei/Tonica/releases/download/v1.0.3/Tonica.dmg" length="1648025" type="application/octet-stream" sparkle:edSignature="78hr82L+vtz63LJ+uEz0DRH1HQdQrdYrbGaa9qy13AJXLp87cYsMd2Nlxcv5iSeNHe1TELUx6dhC+KILMCCUAA=="/>
         </item>
     </channel>
 </rss>
