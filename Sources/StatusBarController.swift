@@ -1,16 +1,22 @@
 import AppKit
 
 @MainActor
-final class StatusBarController: NSObject {
+final class StatusBarController: NSObject, NSMenuDelegate {
     private weak var controller: AppController?
     private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
     private let menu = NSMenu()
     private let toggleItem = NSMenuItem(title: "Reveal Circle", action: #selector(togglePanel), keyEquivalent: "")
+    private let updateStateItem = NSMenuItem(title: "Checking for updates…", action: nil, keyEquivalent: "")
+    private let downloadUpdateItem = NSMenuItem(title: "Download Update", action: #selector(downloadUpdate), keyEquivalent: "")
+    private let checkForUpdatesItem = NSMenuItem(title: "Check for Updates", action: #selector(checkForUpdates), keyEquivalent: "")
     private let shortcutItem = NSMenuItem(title: "", action: nil, keyEquivalent: "")
     private let settingsItem = NSMenuItem(title: "Settings", action: #selector(openSettings), keyEquivalent: "")
     private let quitItem = NSMenuItem(title: "Quit", action: #selector(quitApp), keyEquivalent: "")
     private var animationTimer: Timer?
     private let animationStartDate = Date()
+    private var updateCheckTask: Task<Void, Never>?
+    private var lastUpdateCheckDate: Date?
+    private var updateState: AppUpdateState = .checking
 
     init(controller: AppController) {
         self.controller = controller
@@ -18,6 +24,7 @@ final class StatusBarController: NSObject {
         configureMenu()
         configureStatusItem()
         startStatusItemAnimation()
+        refreshUpdateState(force: true)
     }
 
     func update(isPanelVisible: Bool, shortcutDescription: String) {
@@ -27,13 +34,22 @@ final class StatusBarController: NSObject {
     }
 
     private func configureMenu() {
+        menu.delegate = self
         toggleItem.target = self
+        updateStateItem.isEnabled = false
+        downloadUpdateItem.target = self
+        downloadUpdateItem.isHidden = true
+        checkForUpdatesItem.target = self
         shortcutItem.isEnabled = false
         settingsItem.target = self
         quitItem.target = self
 
         menu.items = [
             toggleItem,
+            .separator(),
+            updateStateItem,
+            downloadUpdateItem,
+            checkForUpdatesItem,
             .separator(),
             shortcutItem,
             .separator(),
@@ -84,6 +100,10 @@ final class StatusBarController: NSObject {
         button.image = image
     }
 
+    func menuWillOpen(_ menu: NSMenu) {
+        refreshUpdateState(force: false)
+    }
+
     @objc
     private func togglePanel() {
         controller?.togglePanelFromMenuBar()
@@ -95,8 +115,97 @@ final class StatusBarController: NSObject {
     }
 
     @objc
+    private func checkForUpdates() {
+        refreshUpdateState(force: true)
+    }
+
+    @objc
+    private func downloadUpdate() {
+        guard case let .updateAvailable(_, _, downloadURL) = updateState else { return }
+        NSWorkspace.shared.open(downloadURL)
+    }
+
+    @objc
     private func quitApp() {
         NSApplication.shared.terminate(nil)
+    }
+
+    private func refreshUpdateState(force: Bool) {
+        let refreshInterval: TimeInterval = 60 * 15
+
+        if !force,
+           let lastUpdateCheckDate,
+           Date().timeIntervalSince(lastUpdateCheckDate) < refreshInterval {
+            return
+        }
+
+        updateState = .checking
+        applyUpdateState()
+        updateCheckTask?.cancel()
+        updateCheckTask = Task { [weak self] in
+            let latestState = await AppUpdateChecker.checkForUpdates()
+
+            await MainActor.run {
+                guard let self else { return }
+                self.updateState = latestState
+                self.lastUpdateCheckDate = Date()
+                self.applyUpdateState()
+            }
+        }
+    }
+
+    private func applyUpdateState() {
+        switch updateState {
+        case .checking:
+            updateStateItem.attributedTitle = attributedUpdateTitle(
+                symbol: "●",
+                label: "Checking for updates…",
+                color: .secondaryLabelColor
+            )
+            downloadUpdateItem.isHidden = true
+        case .upToDate:
+            updateStateItem.attributedTitle = attributedUpdateTitle(
+                symbol: "●",
+                label: "Tonica is up to date",
+                color: .systemGreen
+            )
+            downloadUpdateItem.isHidden = true
+        case let .updateAvailable(_, latestVersion, _):
+            updateStateItem.attributedTitle = attributedUpdateTitle(
+                symbol: "●",
+                label: "Update available: \(latestVersion)",
+                color: .systemBlue
+            )
+            downloadUpdateItem.title = "Download Tonica \(latestVersion)"
+            downloadUpdateItem.isHidden = false
+        case .unavailable:
+            updateStateItem.attributedTitle = attributedUpdateTitle(
+                symbol: "●",
+                label: "Update status unavailable",
+                color: .secondaryLabelColor
+            )
+            downloadUpdateItem.isHidden = true
+        }
+    }
+
+    private func attributedUpdateTitle(symbol: String, label: String, color: NSColor) -> NSAttributedString {
+        let title = NSMutableAttributedString(
+            string: "\(symbol) ",
+            attributes: [
+                .foregroundColor: color,
+                .font: NSFont.systemFont(ofSize: 13, weight: .semibold)
+            ]
+        )
+        title.append(
+            NSAttributedString(
+                string: label,
+                attributes: [
+                    .foregroundColor: NSColor.labelColor,
+                    .font: NSFont.systemFont(ofSize: 13, weight: .medium)
+                ]
+            )
+        )
+        return title
     }
 
     private static func makeStatusBarImage(phase: TimeInterval, size: CGFloat = 19) -> NSImage {
