@@ -176,7 +176,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
           if ! command -v xcodegen >/dev/null 2>&1; then
+            command -v brew >/dev/null 2>&1 || {
+              echo "Homebrew is required to install xcodegen on the release runner." >&2
+              exit 1
+            }
             brew install xcodegen
           fi
 
@@ -464,7 +469,7 @@ jobs:
           path: ${{ env.METADATA_PATH }}
 
       - name: Upload build diagnostics
-        if: ${{ failure() || inputs.debug_diagnostics }}
+        if: ${{ (failure() || inputs.debug_diagnostics) && env.XCRESULT_PATH != '' }}
         uses: actions/upload-artifact@v4
         with:
           name: tonica-build-diagnostics-${{ needs.resolve-candidate.outputs.version }}-${{ needs.resolve-candidate.outputs.short_sha }}
