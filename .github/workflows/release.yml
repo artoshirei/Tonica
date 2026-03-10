@@ -208,6 +208,8 @@ jobs:
           echo "APP_PATH=$APP_PATH" >> "$GITHUB_ENV"
 
           test -f "${APP_PATH}/Contents/MacOS/${APP_NAME}"
+          chmod +x ./scripts/ensure_app_icon.sh
+          ./scripts/ensure_app_icon.sh "$APP_PATH"
 
           codesign --force --deep --sign "$SIGN_IDENTITY" --timestamp --options runtime \
             --preserve-metadata=entitlements "$APP_PATH"

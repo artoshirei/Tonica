@@ -62,6 +62,8 @@ xcodebuild -exportArchive \
   -exportOptionsPlist "$DIST_DIR/ExportOptions.plist"
 
 test -f "$APP_PATH/Contents/MacOS/$APP_NAME"
+chmod +x "$ROOT_DIR/scripts/ensure_app_icon.sh"
+"$ROOT_DIR/scripts/ensure_app_icon.sh" "$APP_PATH"
 codesign --force --deep --sign "$SIGN_IDENTITY" --timestamp --options runtime \
   --preserve-metadata=entitlements "$APP_PATH"
 codesign --verify --deep --strict --verbose=2 "$APP_PATH"
