@@ -12,10 +12,20 @@ OUTPUT_PATH="$2"
 DOWNLOAD_URL_PREFIX="$3"
 FULL_RELEASE_NOTES_URL="${4:-}"
 PRODUCT_LINK="${5:-https://artoshi.work/tonica}"
-TOOL_PATH="$ROOT_DIR/.build/SourcePackages/artifacts/sparkle/Sparkle/bin/generate_appcast"
+TOOL_PATH=""
+for candidate in \
+  "$ROOT_DIR/.build/SourcePackages/artifacts/sparkle/Sparkle/bin/generate_appcast" \
+  "$ROOT_DIR/.derived_ci/SourcePackages/artifacts/sparkle/Sparkle/bin/generate_appcast" \
+  "$ROOT_DIR/.derived/SourcePackages/artifacts/sparkle/Sparkle/bin/generate_appcast"
+do
+  if [[ -x "$candidate" ]]; then
+    TOOL_PATH="$candidate"
+    break
+  fi
+done
 
-if [[ ! -x "$TOOL_PATH" ]]; then
-  echo "Sparkle generate_appcast tool not found at $TOOL_PATH" >&2
+if [[ -z "$TOOL_PATH" ]]; then
+  echo "Sparkle generate_appcast tool not found in local SourcePackages artifacts" >&2
   exit 1
 fi
 
