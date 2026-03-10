@@ -3,14 +3,6 @@ name: Release
 "on":
   workflow_dispatch:
     inputs:
-      mode:
-        description: Release mode
-        required: true
-        type: choice
-        options:
-          - build
-          - publish
-          - build-and-publish
       release_tag:
         description: Stable release tag (for example v1.0.4)
         required: true
@@ -19,8 +11,12 @@ name: Release
         description: Marketing version (for example 1.0.4)
         required: true
         type: string
-      artifact_run_id:
-        description: Existing build run to promote during publish mode
+      commit_sha:
+        description: Commit SHA for candidate lookup when the tag does not already exist
+        required: false
+        type: string
+      candidate_run_id:
+        description: Existing candidate workflow run to promote
         required: false
         type: string
   push:
@@ -36,28 +32,42 @@ permissions:
   actions: read
 
 env:
-  APP_NAME: Tonica
-  SCHEME: Tonica
-  PROJECT_PATH: Tonica.xcodeproj
-  DERIVED_DATA_PATH: .derived_ci
-  NOTARY_KEYCHAIN_PROFILE: tonica-ci-notary
   SPARKLE_APPCAST_PATH: docs/appcast.xml
-  DMG_ARTIFACT_PREFIX: tonica-stable-dmg
-  APPCAST_ARTIFACT_PREFIX: tonica-stable-appcast
-  METADATA_ARTIFACT_PREFIX: tonica-release-metadata
+  CANDIDATE_DMG_ARTIFACT_PREFIX: tonica-candidate-dmg
+  CANDIDATE_APPCAST_ARTIFACT_PREFIX: tonica-candidate-appcast
+  CANDIDATE_METADATA_ARTIFACT_PREFIX: tonica-candidate-metadata
 
 jobs:
+  require-release-runner:
+    name: Require Release Runner
+    runs-on: ubuntu-latest
+    outputs:
+      runner_labels_json: ${{ steps.runner.outputs.runner_labels_json }}
+    steps:
+      - name: Require explicit self-hosted release runner
+        id: runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          RUNNER_LABELS_JSON='${{ vars.RELEASE_RUNNER_LABELS_JSON }}'
+          [[ -n "${RUNNER_LABELS_JSON}" ]] || {
+            echo "Missing RELEASE_RUNNER_LABELS_JSON. Refusing to fall back to GitHub-hosted macOS." >&2
+            exit 1
+          }
+
+          echo "runner_labels_json=${RUNNER_LABELS_JSON}" >> "$GITHUB_OUTPUT"
+
   resolve-release:
     name: Resolve Release
     runs-on: ubuntu-latest
+    needs: require-release-runner
     outputs:
-      mode: ${{ steps.resolve.outputs.mode }}
       release_tag: ${{ steps.resolve.outputs.release_tag }}
       version: ${{ steps.resolve.outputs.version }}
       build_number: ${{ steps.resolve.outputs.build_number }}
-      build_requested: ${{ steps.resolve.outputs.build_requested }}
-      publish_requested: ${{ steps.resolve.outputs.publish_requested }}
-      artifact_run_id: ${{ steps.resolve.outputs.artifact_run_id }}
+      commit_sha: ${{ steps.resolve.outputs.commit_sha }}
+      short_sha: ${{ steps.resolve.outputs.short_sha }}
+      candidate_run_id: ${{ steps.resolve.outputs.candidate_run_id }}
       dmg_artifact_name: ${{ steps.resolve.outputs.dmg_artifact_name }}
       appcast_artifact_name: ${{ steps.resolve.outputs.appcast_artifact_name }}
       metadata_artifact_name: ${{ steps.resolve.outputs.metadata_artifact_name }}
@@ -66,489 +76,142 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Resolve canonical release tag and version
+      - name: Resolve canonical stable release identity
         id: resolve
         shell: bash
         run: |
           set -euo pipefail
 
-          PROJECT_VERSION="$(grep -m1 'MARKETING_VERSION' Tonica.xcodeproj/project.pbxproj | sed 's/.*MARKETING_VERSION = //; s/;//; s/[[:space:]]//g')"
-          BUILD_NUMBER="$(grep -m1 'CURRENT_PROJECT_VERSION' Tonica.xcodeproj/project.pbxproj | sed 's/.*CURRENT_PROJECT_VERSION = //; s/;//; s/[[:space:]]//g')"
-
           if [[ "${GITHUB_EVENT_NAME}" == "push" ]]; then
-            MODE="build-and-publish"
             RELEASE_TAG="${GITHUB_REF_NAME}"
             VERSION="${RELEASE_TAG#v}"
-            ARTIFACT_RUN_ID="${GITHUB_RUN_ID}"
-
-            if [[ "${RELEASE_TAG}" != "v${VERSION}" ]]; then
-              echo "Tag ${RELEASE_TAG} is not a valid stable tag." >&2
-              exit 1
-            fi
-
-            if [[ "${VERSION}" != "${PROJECT_VERSION}" ]]; then
-              echo "Tag ${RELEASE_TAG} does not match project version ${PROJECT_VERSION}." >&2
-              exit 1
-            fi
+            COMMIT_SHA="${GITHUB_SHA}"
+            CANDIDATE_RUN_ID=""
           else
-            MODE="${{ inputs.mode }}"
             RELEASE_TAG="${{ inputs.release_tag }}"
             VERSION="${{ inputs.version }}"
-            ARTIFACT_RUN_ID="${{ inputs.artifact_run_id }}"
-
-            if [[ -z "${MODE}" || -z "${RELEASE_TAG}" || -z "${VERSION}" ]]; then
-              echo "Manual runs require explicit mode, release_tag, and version." >&2
-              exit 1
-            fi
-
-            if [[ "${RELEASE_TAG}" != "v${VERSION}" ]]; then
-              echo "release_tag must exactly match version (expected v${VERSION})." >&2
-              exit 1
-            fi
-
-            if [[ "${MODE}" != "publish" && "${VERSION}" != "${PROJECT_VERSION}" ]]; then
-              echo "Build modes require the repo version ${PROJECT_VERSION} to match the requested version ${VERSION}." >&2
-              exit 1
-            fi
-
-            if [[ "${MODE}" == "publish" && -z "${ARTIFACT_RUN_ID}" ]]; then
-              echo "Publish mode requires artifact_run_id so we can promote an existing signed artifact instead of rebuilding." >&2
-              exit 1
-            fi
+            COMMIT_SHA="${{ inputs.commit_sha }}"
+            CANDIDATE_RUN_ID="${{ inputs.candidate_run_id }}"
           fi
 
-          if [[ -n "${ARTIFACT_RUN_ID}" && ! "${ARTIFACT_RUN_ID}" =~ ^[0-9]+$ ]]; then
-            echo "artifact_run_id must be numeric." >&2
+          [[ -n "${RELEASE_TAG}" ]] || { echo "release_tag is required." >&2; exit 1; }
+          [[ -n "${VERSION}" ]] || { echo "version is required." >&2; exit 1; }
+          [[ "${RELEASE_TAG}" == "v${VERSION}" ]] || {
+            echo "release_tag must exactly match version (expected v${VERSION})." >&2
+            exit 1
+          }
+
+          if git rev-parse --verify "${RELEASE_TAG}^{commit}" >/dev/null 2>&1; then
+            TAG_COMMIT="$(git rev-list -n 1 "${RELEASE_TAG}")"
+            if [[ -n "${COMMIT_SHA}" && "${COMMIT_SHA}" != "${TAG_COMMIT}" ]]; then
+              echo "commit_sha ${COMMIT_SHA} does not match tag ${RELEASE_TAG} commit ${TAG_COMMIT}." >&2
+              exit 1
+            fi
+            COMMIT_SHA="${TAG_COMMIT}"
+          fi
+
+          [[ -n "${COMMIT_SHA}" ]] || {
+            echo "commit_sha is required when release_tag is not present locally." >&2
+            exit 1
+          }
+
+          git rev-parse --verify "${COMMIT_SHA}^{commit}" >/dev/null
+          git checkout --detach "${COMMIT_SHA}"
+
+          PROJECT_VERSION="$(grep -m1 'MARKETING_VERSION' Tonica.xcodeproj/project.pbxproj | sed 's/.*MARKETING_VERSION = //; s/;//; s/[[:space:]]//g')"
+          BUILD_NUMBER="$(grep -m1 'CURRENT_PROJECT_VERSION' Tonica.xcodeproj/project.pbxproj | sed 's/.*CURRENT_PROJECT_VERSION = //; s/;//; s/[[:space:]]//g')"
+          [[ "${VERSION}" == "${PROJECT_VERSION}" ]] || {
+            echo "Requested version ${VERSION} does not match commit ${COMMIT_SHA} project version ${PROJECT_VERSION}." >&2
+            exit 1
+          }
+
+          if [[ -n "${CANDIDATE_RUN_ID}" && ! "${CANDIDATE_RUN_ID}" =~ ^[0-9]+$ ]]; then
+            echo "candidate_run_id must be numeric." >&2
             exit 1
           fi
 
-          BUILD_REQUESTED=false
-          PUBLISH_REQUESTED=false
-          if [[ "${MODE}" == "build" || "${MODE}" == "build-and-publish" ]]; then
-            BUILD_REQUESTED=true
-          fi
-          if [[ "${MODE}" == "publish" || "${MODE}" == "build-and-publish" ]]; then
-            PUBLISH_REQUESTED=true
-          fi
-
-          SAFE_TAG="${RELEASE_TAG//\//-}"
+          SHORT_SHA="$(git rev-parse --short=12 "${COMMIT_SHA}")"
 
           {
-            echo "mode=${MODE}"
             echo "release_tag=${RELEASE_TAG}"
             echo "version=${VERSION}"
             echo "build_number=${BUILD_NUMBER}"
-            echo "build_requested=${BUILD_REQUESTED}"
-            echo "publish_requested=${PUBLISH_REQUESTED}"
-            echo "artifact_run_id=${ARTIFACT_RUN_ID}"
-            echo "dmg_artifact_name=${DMG_ARTIFACT_PREFIX}-${SAFE_TAG}"
-            echo "appcast_artifact_name=${APPCAST_ARTIFACT_PREFIX}-${SAFE_TAG}"
-            echo "metadata_artifact_name=${METADATA_ARTIFACT_PREFIX}-${SAFE_TAG}"
+            echo "commit_sha=${COMMIT_SHA}"
+            echo "short_sha=${SHORT_SHA}"
+            echo "candidate_run_id=${CANDIDATE_RUN_ID}"
+            echo "dmg_artifact_name=${CANDIDATE_DMG_ARTIFACT_PREFIX}-${VERSION}-${SHORT_SHA}"
+            echo "appcast_artifact_name=${CANDIDATE_APPCAST_ARTIFACT_PREFIX}-${VERSION}-${SHORT_SHA}"
+            echo "metadata_artifact_name=${CANDIDATE_METADATA_ARTIFACT_PREFIX}-${VERSION}-${SHORT_SHA}"
           } >> "$GITHUB_OUTPUT"
 
-      - name: Verify release runner inventory
+  locate-candidate:
+    name: Locate Candidate Artifact
+    runs-on: ubuntu-latest
+    needs: resolve-release
+    outputs:
+      candidate_run_id: ${{ steps.locate.outputs.candidate_run_id }}
+    steps:
+      - name: Locate candidate artifact run
+        id: locate
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
-          if RUNNER_JSON="$(gh api repos/${GITHUB_REPOSITORY}/actions/runners 2>/dev/null)"; then
-            TOTAL_RUNNERS="$(jq -r '.total_count' <<<"$RUNNER_JSON")"
-            SELF_HOSTED_COUNT="$(jq '[.runners[] | select(any(.labels[]; .name == "self-hosted"))] | length' <<<"$RUNNER_JSON")"
 
-            {
-              echo "## Runner Audit"
-              echo ""
-              echo "- Configured self-hosted runners: ${SELF_HOSTED_COUNT}"
-              echo "- Total configured repository runners: ${TOTAL_RUNNERS}"
-              if [[ "${SELF_HOSTED_COUNT}" -eq 0 ]]; then
-                echo "- Release workflow currently runs on GitHub-hosted \`macos-15\`, not a self-hosted macOS runner."
-              fi
-            } >> "$GITHUB_STEP_SUMMARY"
-          else
-            {
-              echo "## Runner Audit"
-              echo ""
-              echo "- Repository runner inventory was not readable with the workflow token."
-              echo "- Known state from local verification: this repo currently has no configured self-hosted runners, so stable releases run on GitHub-hosted \`macos-15\`."
-            } >> "$GITHUB_STEP_SUMMARY"
+          if [[ -n "${{ needs.resolve-release.outputs.candidate_run_id }}" ]]; then
+            echo "candidate_run_id=${{ needs.resolve-release.outputs.candidate_run_id }}" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
 
-  build-candidate:
-    name: Build Candidate
-    runs-on: macos-15
-    needs: resolve-release
-    if: needs.resolve-release.outputs.build_requested == 'true'
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+          ARTIFACTS_JSON="$(gh api --paginate "repos/${GITHUB_REPOSITORY}/actions/artifacts?per_page=100" | jq -s '[.[].artifacts[]]')"
 
-      - name: Select configured Xcode
-        id: xcode
-        shell: bash
-        run: |
-          set -euo pipefail
-          RAW_CANDIDATES=()
-          while IFS= read -r candidate; do
-            RAW_CANDIDATES+=("$candidate")
-          done < <(
-            {
-              xcode-select -p 2>/dev/null || true
-              printf '%s\n' "/Applications/Xcode.app/Contents/Developer"
-              printf '%s\n' "/Applications/Xcode-beta.app/Contents/Developer"
-              find /Applications "$HOME/Applications" -maxdepth 2 -type d -name 'Xcode*.app' 2>/dev/null \
-                | sed 's#$#/Contents/Developer#'
-            } | awk 'NF && !seen[$0]++'
-          )
+          resolve_run_id() {
+            local artifact_name="$1"
+            jq -r --arg name "$artifact_name" '
+              map(select(.name == $name and .expired == false and .workflow_run.id != null))
+              | sort_by(.created_at)
+              | last
+              | .workflow_run.id // empty
+            ' <<<"$ARTIFACTS_JSON"
+          }
 
-          for candidate in "${RAW_CANDIDATES[@]}"; do
-            [[ -d "$candidate" ]] || continue
-            if VERSION_OUTPUT="$(DEVELOPER_DIR="$candidate" xcodebuild -version 2>/dev/null)"; then
-              echo "Using Xcode at: $candidate"
-              echo "$VERSION_OUTPUT"
-              echo "DEVELOPER_DIR=$candidate" >> "$GITHUB_ENV"
-              echo "version<<EOF" >> "$GITHUB_OUTPUT"
-              echo "$VERSION_OUTPUT" >> "$GITHUB_OUTPUT"
-              echo "EOF" >> "$GITHUB_OUTPUT"
-              exit 0
-            fi
-          done
+          DMG_RUN_ID="$(resolve_run_id "${{ needs.resolve-release.outputs.dmg_artifact_name }}")"
+          APPCAST_RUN_ID="$(resolve_run_id "${{ needs.resolve-release.outputs.appcast_artifact_name }}")"
+          METADATA_RUN_ID="$(resolve_run_id "${{ needs.resolve-release.outputs.metadata_artifact_name }}")"
 
-          echo "Could not find a usable Xcode installation." >&2
-          exit 1
+          [[ -n "${DMG_RUN_ID}" ]] || {
+            echo "No candidate artifact found for ${{ needs.resolve-release.outputs.version }} (${{ needs.resolve-release.outputs.commit_sha }})." >&2
+            echo "Build the candidate first with .github/workflows/build-candidate.yml, then rerun this release workflow." >&2
+            exit 1
+          }
 
-      - name: Install XcodeGen
-        shell: bash
-        run: |
-          set -euo pipefail
-          if ! command -v xcodegen >/dev/null 2>&1; then
-            brew install xcodegen
-          fi
+          [[ "${DMG_RUN_ID}" == "${APPCAST_RUN_ID}" && "${DMG_RUN_ID}" == "${METADATA_RUN_ID}" ]] || {
+            echo "Candidate artifacts do not come from the same workflow run." >&2
+            exit 1
+          }
 
-      - name: Generate project
-        shell: bash
-        run: xcodegen generate
-
-      - name: Import Developer ID certificate
-        env:
-          CERT_P12_BASE64: ${{ secrets.APPLE_DEVELOPER_ID_APPLICATION_CERT_P12 }}
-          CERT_PASSWORD: ${{ secrets.APPLE_DEVELOPER_ID_APPLICATION_CERT_PASSWORD }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          KEYCHAIN_PATH="$RUNNER_TEMP/ci-signing.keychain-db"
-          KEYCHAIN_PASSWORD="$(openssl rand -hex 32)"
-
-          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
-          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
-          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
-
-          CERT_PATH="$RUNNER_TEMP/developer_id.p12"
-          printf '%s' "$CERT_P12_BASE64" | base64 --decode -o "$CERT_PATH"
-
-          security import "$CERT_PATH" \
-            -k "$KEYCHAIN_PATH" \
-            -P "$CERT_PASSWORD" \
-            -T /usr/bin/codesign \
-            -T /usr/bin/productbuild
-
-          security set-key-partition-list \
-            -S apple-tool:,apple: \
-            -s \
-            -k "$KEYCHAIN_PASSWORD" \
-            "$KEYCHAIN_PATH"
-
-          USER_KEYCHAINS=()
-          while IFS= read -r keychain; do
-            USER_KEYCHAINS+=("$(printf '%s' "$keychain" | sed 's/^[[:space:]]*\"//; s/\"$//')")
-          done < <(security list-keychains -d user)
-
-          security list-keychains -d user -s "$KEYCHAIN_PATH" "${USER_KEYCHAINS[@]}"
-
-          echo "KEYCHAIN_PATH=$KEYCHAIN_PATH" >> "$GITHUB_ENV"
-          echo "KEYCHAIN_PASSWORD=$KEYCHAIN_PASSWORD" >> "$GITHUB_ENV"
-
-      - name: Configure notarytool credentials
-        env:
-          APPLE_NOTARY_API_KEY_P8: ${{ secrets.APPLE_NOTARY_API_KEY_P8 }}
-          APPLE_NOTARY_KEY_ID: ${{ secrets.APPLE_NOTARY_KEY_ID }}
-          APPLE_NOTARY_ISSUER_ID: ${{ secrets.APPLE_NOTARY_ISSUER_ID }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          API_KEY_PATH="$RUNNER_TEMP/AuthKey_${APPLE_NOTARY_KEY_ID}.p8"
-          printf '%s' "$APPLE_NOTARY_API_KEY_P8" > "$API_KEY_PATH"
-
-          store_args=(
-            store-credentials
-            "$NOTARY_KEYCHAIN_PROFILE"
-            --key "$API_KEY_PATH"
-            --key-id "$APPLE_NOTARY_KEY_ID"
-            --keychain "$KEYCHAIN_PATH"
-          )
-
-          if [[ -n "${APPLE_NOTARY_ISSUER_ID:-}" ]]; then
-            store_args+=(--issuer "$APPLE_NOTARY_ISSUER_ID")
-          fi
-
-          xcrun notarytool "${store_args[@]}"
-
-          echo "APPLE_NOTARY_KEYCHAIN_PROFILE=$NOTARY_KEYCHAIN_PROFILE" >> "$GITHUB_ENV"
-          echo "APPLE_NOTARY_KEYCHAIN_PATH=$KEYCHAIN_PATH" >> "$GITHUB_ENV"
-
-      - name: Archive app
-        id: archive
-        env:
-          TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-          SIGN_IDENTITY: ${{ secrets.APPLE_DEVELOPER_ID_APPLICATION_IDENTITY }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          SECONDS=0
-          ARCHIVE_PATH="$RUNNER_TEMP/${APP_NAME}.xcarchive"
-          XCRESULT_PATH="$RUNNER_TEMP/${APP_NAME}Archive.xcresult"
-
-          echo "ARCHIVE_PATH=$ARCHIVE_PATH" >> "$GITHUB_ENV"
-          echo "XCRESULT_PATH=$XCRESULT_PATH" >> "$GITHUB_ENV"
-
-          xcodebuild archive \
-            -project "$PROJECT_PATH" \
-            -scheme "$SCHEME" \
-            -configuration Release \
-            -archivePath "$ARCHIVE_PATH" \
-            -derivedDataPath "$DERIVED_DATA_PATH" \
-            -resultBundlePath "$XCRESULT_PATH" \
-            CODE_SIGN_STYLE=Manual \
-            CODE_SIGN_IDENTITY="$SIGN_IDENTITY" \
-            DEVELOPMENT_TEAM="$TEAM_ID" \
-            ENABLE_HARDENED_RUNTIME=YES \
-            OTHER_CODE_SIGN_FLAGS="--timestamp --options runtime"
-
-          echo "seconds=$SECONDS" >> "$GITHUB_OUTPUT"
-
-      - name: Export signed app
-        id: export
-        env:
-          TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-          SIGN_IDENTITY: ${{ secrets.APPLE_DEVELOPER_ID_APPLICATION_IDENTITY }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          SECONDS=0
-          EXPORT_PATH="$RUNNER_TEMP/export"
-          echo "EXPORT_PATH=$EXPORT_PATH" >> "$GITHUB_ENV"
-
-          cat > "$RUNNER_TEMP/ExportOptions.plist" <<EOF
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0">
-          <dict>
-              <key>method</key>
-              <string>developer-id</string>
-              <key>teamID</key>
-              <string>${TEAM_ID}</string>
-              <key>signingStyle</key>
-              <string>manual</string>
-              <key>signingCertificate</key>
-              <string>${SIGN_IDENTITY}</string>
-              <key>stripSwiftSymbols</key>
-              <true/>
-          </dict>
-          </plist>
-          EOF
-
-          xcodebuild -exportArchive \
-            -archivePath "$ARCHIVE_PATH" \
-            -exportPath "$EXPORT_PATH" \
-            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist"
-
-          APP_PATH="${EXPORT_PATH}/${APP_NAME}.app"
-          echo "APP_PATH=$APP_PATH" >> "$GITHUB_ENV"
-
-          test -f "${APP_PATH}/Contents/MacOS/${APP_NAME}"
-          chmod +x ./scripts/ensure_app_icon.sh
-          ./scripts/ensure_app_icon.sh "$APP_PATH"
-
-          codesign --force --deep --sign "$SIGN_IDENTITY" --timestamp --options runtime \
-            --preserve-metadata=entitlements "$APP_PATH"
-
-          echo "seconds=$SECONDS" >> "$GITHUB_OUTPUT"
-
-      - name: Verify app signature
-        shell: bash
-        run: |
-          set -euo pipefail
-          codesign --verify --deep --strict --verbose=2 "$APP_PATH"
-
-      - name: Notarize app bundle
-        id: notarize_app
-        shell: bash
-        run: |
-          set -euo pipefail
-          SECONDS=0
-          NOTARIZE_ZIP="$RUNNER_TEMP/${APP_NAME}-${{ needs.resolve-release.outputs.version }}-notarize.zip"
-          ditto -c -k --keepParent "$APP_PATH" "$NOTARIZE_ZIP"
-
-          chmod +x ./scripts/notarize_archive.sh
-          ./scripts/notarize_archive.sh "$NOTARIZE_ZIP"
-
-          xcrun stapler staple "$APP_PATH"
-          xcrun stapler validate "$APP_PATH"
-          spctl --assess --type exec -vv "$APP_PATH"
-
-          echo "seconds=$SECONDS" >> "$GITHUB_OUTPUT"
-
-      - name: Create DMG
-        id: create_dmg
-        env:
-          SIGN_IDENTITY: ${{ secrets.APPLE_DEVELOPER_ID_APPLICATION_IDENTITY }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          SECONDS=0
-          chmod +x ./scripts/build_dmg.sh
-          DMG_PATH="$RUNNER_TEMP/Tonica.dmg"
-          ./scripts/build_dmg.sh "$APP_PATH" "$DMG_PATH" "$APP_NAME"
-          codesign --force --sign "$SIGN_IDENTITY" --timestamp --verbose=2 "$DMG_PATH"
-          codesign --verify --verbose=2 "$DMG_PATH"
-
-          echo "DMG_PATH=$DMG_PATH" >> "$GITHUB_ENV"
-          echo "seconds=$SECONDS" >> "$GITHUB_OUTPUT"
-
-      - name: Notarize DMG
-        id: notarize_dmg
-        shell: bash
-        run: |
-          set -euo pipefail
-          SECONDS=0
-          chmod +x ./scripts/notarize_archive.sh
-          ./scripts/notarize_archive.sh "$DMG_PATH"
-
-          xcrun stapler staple "$DMG_PATH"
-          xcrun stapler validate "$DMG_PATH"
-          spctl --assess --type open --context context:primary-signature -vv "$DMG_PATH"
-
-          echo "seconds=$SECONDS" >> "$GITHUB_OUTPUT"
-
-      - name: Generate appcast candidate
-        shell: bash
-        run: |
-          set -euo pipefail
-          chmod +x ./scripts/generate_appcast.sh
-          APPCAST_PATH="$RUNNER_TEMP/appcast.xml"
-          ./scripts/generate_appcast.sh \
-            "$DMG_PATH" \
-            "$APPCAST_PATH" \
-            "https://github.com/${GITHUB_REPOSITORY}/releases/download/${{ needs.resolve-release.outputs.release_tag }}/" \
-            "https://github.com/${GITHUB_REPOSITORY}/releases/tag/${{ needs.resolve-release.outputs.release_tag }}" \
-            "https://artoshi.work/tonica"
-          echo "APPCAST_PATH=$APPCAST_PATH" >> "$GITHUB_ENV"
-
-      - name: Emit release metadata
-        shell: bash
-        run: |
-          set -euo pipefail
-          METADATA_PATH="$RUNNER_TEMP/release-metadata.json"
-          DMG_SHA256="$(shasum -a 256 "$DMG_PATH" | awk '{print $1}')"
-          DMG_SIZE="$(stat -f '%z' "$DMG_PATH")"
-          jq -n \
-            --arg release_tag "${{ needs.resolve-release.outputs.release_tag }}" \
-            --arg version "${{ needs.resolve-release.outputs.version }}" \
-            --arg build_number "${{ needs.resolve-release.outputs.build_number }}" \
-            --arg commit_sha "${GITHUB_SHA}" \
-            --arg run_id "${GITHUB_RUN_ID}" \
-            --arg xcode "${{ steps.xcode.outputs.version }}" \
-            --arg dmg_sha256 "$DMG_SHA256" \
-            --argjson dmg_size "$DMG_SIZE" \
-            --argjson archive_seconds "${{ steps.archive.outputs.seconds }}" \
-            --argjson export_seconds "${{ steps.export.outputs.seconds }}" \
-            --argjson notarize_app_seconds "${{ steps.notarize_app.outputs.seconds }}" \
-            --argjson create_dmg_seconds "${{ steps.create_dmg.outputs.seconds }}" \
-            --argjson notarize_dmg_seconds "${{ steps.notarize_dmg.outputs.seconds }}" \
-            '{
-              release_tag: $release_tag,
-              version: $version,
-              build_number: $build_number,
-              commit_sha: $commit_sha,
-              run_id: $run_id,
-              xcode: $xcode,
-              dmg_sha256: $dmg_sha256,
-              dmg_size: $dmg_size,
-              timings: {
-                archive_seconds: $archive_seconds,
-                export_seconds: $export_seconds,
-                notarize_app_seconds: $notarize_app_seconds,
-                create_dmg_seconds: $create_dmg_seconds,
-                notarize_dmg_seconds: $notarize_dmg_seconds
-              }
-            }' > "$METADATA_PATH"
-          echo "METADATA_PATH=$METADATA_PATH" >> "$GITHUB_ENV"
-
-      - name: Upload DMG artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ needs.resolve-release.outputs.dmg_artifact_name }}
-          retention-days: 7
-          if-no-files-found: error
-          path: ${{ env.DMG_PATH }}
-
-      - name: Upload appcast artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ needs.resolve-release.outputs.appcast_artifact_name }}
-          retention-days: 7
-          if-no-files-found: error
-          path: ${{ env.APPCAST_PATH }}
-
-      - name: Upload release metadata artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ needs.resolve-release.outputs.metadata_artifact_name }}
-          retention-days: 7
-          if-no-files-found: error
-          path: |
-            ${{ env.METADATA_PATH }}
-            ${{ env.XCRESULT_PATH }}
-
-      - name: Recovery summary on build failure
-        if: failure()
-        shell: bash
-        run: |
-          {
-            echo "## Build Recovery"
-            echo ""
-            echo "- Failing step: see the red step above in the Build Candidate job."
-            echo "- Smallest safe recovery path: fix that build/sign/notarization issue, then rerun manual mode \`build\` or \`build-and-publish\` for the same release_tag/version."
-          } >> "$GITHUB_STEP_SUMMARY"
+          echo "candidate_run_id=${DMG_RUN_ID}" >> "$GITHUB_OUTPUT"
 
   publish-stable:
     name: Publish Stable
     runs-on: ubuntu-latest
     needs:
       - resolve-release
-      - build-candidate
-    if: needs.resolve-release.outputs.publish_requested == 'true'
+      - locate-candidate
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Download current-run build artifacts
-        if: needs.resolve-release.outputs.build_requested == 'true'
-        uses: actions/download-artifact@v4
-        with:
-          path: publish-input
-
-      - name: Download promoted build artifacts
-        if: needs.resolve-release.outputs.build_requested != 'true'
+      - name: Download promoted candidate artifacts
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p publish-input
-          gh run download "${{ needs.resolve-release.outputs.artifact_run_id }}" \
+          gh run download "${{ needs.locate-candidate.outputs.candidate_run_id }}" \
             -n "${{ needs.resolve-release.outputs.dmg_artifact_name }}" \
             -n "${{ needs.resolve-release.outputs.appcast_artifact_name }}" \
             -n "${{ needs.resolve-release.outputs.metadata_artifact_name }}" \
@@ -569,10 +232,20 @@ jobs:
 
           METADATA_RELEASE_TAG="$(jq -r '.release_tag' "$METADATA_PATH")"
           METADATA_VERSION="$(jq -r '.version' "$METADATA_PATH")"
-          if [[ "$METADATA_RELEASE_TAG" != "${{ needs.resolve-release.outputs.release_tag }}" || "$METADATA_VERSION" != "${{ needs.resolve-release.outputs.version }}" ]]; then
-            echo "Artifact metadata (${METADATA_RELEASE_TAG}, ${METADATA_VERSION}) does not match the requested stable release." >&2
+          METADATA_COMMIT_SHA="$(jq -r '.commit_sha' "$METADATA_PATH")"
+
+          [[ "$METADATA_RELEASE_TAG" == "${{ needs.resolve-release.outputs.release_tag }}" ]] || {
+            echo "Artifact release tag ${METADATA_RELEASE_TAG} does not match requested release tag." >&2
             exit 1
-          fi
+          }
+          [[ "$METADATA_VERSION" == "${{ needs.resolve-release.outputs.version }}" ]] || {
+            echo "Artifact version ${METADATA_VERSION} does not match requested version." >&2
+            exit 1
+          }
+          [[ "$METADATA_COMMIT_SHA" == "${{ needs.resolve-release.outputs.commit_sha }}" ]] || {
+            echo "Artifact commit ${METADATA_COMMIT_SHA} does not match requested commit." >&2
+            exit 1
+          }
 
           {
             echo "dmg_path=$DMG_PATH"
@@ -601,7 +274,7 @@ jobs:
           else
             gh release create "${{ needs.resolve-release.outputs.release_tag }}" \
               "${{ steps.files.outputs.dmg_path }}#Tonica.dmg" \
-              --target "${GITHUB_SHA}" \
+              --target "${{ needs.resolve-release.outputs.commit_sha }}" \
               --title "Tonica ${{ needs.resolve-release.outputs.version }}" \
               --notes-file "$NOTES_FILE"
           fi
@@ -684,11 +357,11 @@ jobs:
             fi
           done
 
-          NEXT_FIX="keep promoting existing notarized artifacts for republish runs so we avoid another full build/notarization cycle"
+          NEXT_FIX="candidate promotion is already active; keep candidate artifacts warm for the next stable publish"
           if [[ "$SLOWEST_NAME" == "archive" ]]; then
-            NEXT_FIX="move stable release builds onto a self-hosted macOS runner with persistent workspace, DerivedData, and SwiftPM caches"
+            NEXT_FIX="reuse persistent workspace, SwiftPM caches, and DerivedData on the release Mac so archive stays incremental"
           elif [[ "$SLOWEST_NAME" == "notarize_app" || "$SLOWEST_NAME" == "notarize_dmg" ]]; then
-            NEXT_FIX="reuse already-notarized artifacts for republish instead of rebuilding when only publish inputs changed"
+            NEXT_FIX="treat dual notarization as an experiment and verify whether one stapled notarization pass can be safely dropped"
           fi
 
           {
@@ -704,7 +377,8 @@ jobs:
             echo "| publish release | ${PUBLISH_RELEASE_SECONDS} |"
             echo "| publish appcast | ${PUBLISH_APPCAST_SECONDS} |"
             echo ""
-            echo "Next bottleneck fix: ${NEXT_FIX}."
+            echo "Slowest stage: ${SLOWEST_NAME} (${SLOWEST_SECONDS}s)."
+            echo "Smallest safe next improvement: ${NEXT_FIX}."
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Recovery summary on publish failure
@@ -715,5 +389,5 @@ jobs:
             echo "## Publish Recovery"
             echo ""
             echo "- Failing step: see the red step above in the Publish Stable job."
-            echo "- Smallest safe recovery path: rerun manual mode \`publish\` with the same release_tag/version and the build artifact run id, instead of bumping the version or rebuilding blindly."
+            echo "- Smallest safe recovery path: rerun this workflow for the same release_tag/version after confirming the candidate artifact run id."
           } >> "$GITHUB_STEP_SUMMARY"
