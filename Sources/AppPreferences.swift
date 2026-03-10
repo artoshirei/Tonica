@@ -68,6 +68,7 @@ enum PanelTheme: String, CaseIterable, Identifiable {
 enum AppPreferences {
     private enum Key {
         static let theme = "theme"
+        static let panelFrame = "panelFrame"
     }
 
     static func loadTheme() -> PanelTheme {
@@ -83,5 +84,33 @@ enum AppPreferences {
 
     static func saveTheme(_ theme: PanelTheme) {
         UserDefaults.standard.set(theme.rawValue, forKey: Key.theme)
+    }
+
+    static func loadPanelFrame() -> CGRect? {
+        let defaults = UserDefaults.standard
+
+        guard let frame = defaults.dictionary(forKey: Key.panelFrame) else { return nil }
+        guard let x = frame["x"] as? Double,
+              let y = frame["y"] as? Double,
+              let width = frame["width"] as? Double,
+              let height = frame["height"] as? Double else {
+            return nil
+        }
+
+        let rect = CGRect(x: x, y: y, width: width, height: height)
+        guard rect.width > 0, rect.height > 0 else { return nil }
+        return rect
+    }
+
+    static func savePanelFrame(_ frame: CGRect) {
+        UserDefaults.standard.set(
+            [
+                "x": frame.origin.x,
+                "y": frame.origin.y,
+                "width": frame.width,
+                "height": frame.height
+            ],
+            forKey: Key.panelFrame
+        )
     }
 }

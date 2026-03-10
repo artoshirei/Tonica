@@ -1,11 +1,15 @@
 import AppKit
+import QuartzCore
 import SwiftUI
 
 @MainActor
 final class FloatingPanelController: NSWindowController, NSWindowDelegate {
     private static let defaultWindowSize = NSSize(width: 1260, height: 840)
+    private static let revealAnimationDuration: TimeInterval = 0.08
+    private static let hideAnimationDuration: TimeInterval = 0.06
 
     private let model: AppModel
+    private var isAnimatingDismissal = false
 
     init(model: AppModel) {
         self.model = model
@@ -25,7 +29,7 @@ final class FloatingPanelController: NSWindowController, NSWindowDelegate {
         window.backgroundColor = .clear
         window.isOpaque = false
         window.isReleasedWhenClosed = false
-        window.animationBehavior = .utilityWindow
+        window.animationBehavior = .none
         window.standardWindowButton(.zoomButton)?.isHidden = true
         window.standardWindowButton(.miniaturizeButton)?.isHidden = true
 
@@ -52,37 +56,64 @@ final class FloatingPanelController: NSWindowController, NSWindowDelegate {
             return
         }
 
+        isAnimatingDismissal = false
         prepareFrame(for: window)
+        window.alphaValue = 0
         showWindow(nil)
         window.orderFrontRegardless()
         window.makeMain()
         window.makeKeyAndOrderFront(nil)
         NSRunningApplication.current.activate(options: [.activateAllWindows])
         NSApp.activate(ignoringOtherApps: true)
+        animate(window: window, toAlpha: 1, duration: Self.revealAnimationDuration)
         AppLogger.panel.debug("Presented panel at x=\(Int(window.frame.origin.x), privacy: .public) y=\(Int(window.frame.origin.y), privacy: .public) w=\(Int(window.frame.width), privacy: .public) h=\(Int(window.frame.height), privacy: .public)")
     }
 
     func dismiss() {
         AppLogger.panel.debug("Dismissing panel window")
-        window?.orderOut(nil)
+        guard let window else { return }
+
+        rememberFrame(from: window)
+        isAnimatingDismissal = true
+        animate(window: window, toAlpha: 0, duration: Self.hideAnimationDuration) { [weak self] in
+            guard let self else { return }
+            window.orderOut(nil)
+            window.alphaValue = 1
+            self.isAnimatingDismissal = false
+        }
     }
 
     func windowWillClose(_ notification: Notification) {
         AppController.shared.panelDidClose()
     }
 
+    func windowDidMove(_ notification: Notification) {
+        guard !isAnimatingDismissal, let window else { return }
+        rememberFrame(from: window)
+    }
+
     private func prepareFrame(for window: NSWindow) {
+        if let rememberedFrame = AppPreferences.loadPanelFrame() {
+            let targetFrame = constrainedFrame(for: rememberedFrame)
+            window.setContentSize(targetFrame.size)
+            window.setFrame(targetFrame, display: false)
+            return
+        }
+
         let targetScreen = primaryScreen() ?? NSScreen.main ?? NSScreen.screens.first
 
         guard let targetScreen else {
-            window.setFrame(NSRect(origin: .zero, size: Self.defaultWindowSize), display: false)
+            let defaultFrame = NSRect(origin: .zero, size: Self.defaultWindowSize)
+            window.setFrame(defaultFrame, display: false)
             window.center()
+            rememberFrame(from: window)
             return
         }
 
         let targetFrame = fittedFrame(for: targetScreen)
         window.setContentSize(targetFrame.size)
         window.setFrame(targetFrame, display: false)
+        rememberFrame(from: window)
     }
 
     private func primaryScreen() -> NSScreen? {
@@ -116,9 +147,67 @@ final class FloatingPanelController: NSWindowController, NSWindowDelegate {
 
         return NSRect(origin: origin, size: size)
     }
+
+    private func constrainedFrame(for frame: NSRect) -> NSRect {
+        let targetScreen = screen(containing: frame) ?? primaryScreen() ?? NSScreen.main ?? NSScreen.screens.first
+
+        guard let targetScreen else { return frame }
+
+        let visible = targetScreen.visibleFrame
+        let size = NSSize(
+            width: min(frame.width, visible.width),
+            height: min(frame.height, visible.height)
+        )
+        let maxX = visible.maxX - size.width
+        let maxY = visible.maxY - size.height
+        let origin = CGPoint(
+            x: min(max(frame.origin.x, visible.minX), maxX),
+            y: min(max(frame.origin.y, visible.minY), maxY)
+        )
+
+        return NSRect(origin: origin, size: size)
+    }
+
+    private func screen(containing frame: NSRect) -> NSScreen? {
+        let frameCenter = CGPoint(x: frame.midX, y: frame.midY)
+
+        if let exact = NSScreen.screens.first(where: { $0.visibleFrame.contains(frameCenter) }) {
+            return exact
+        }
+
+        return NSScreen.screens.max { lhs, rhs in
+            lhs.visibleFrame.intersection(frame).area < rhs.visibleFrame.intersection(frame).area
+        }
+    }
+
+    private func rememberFrame(from window: NSWindow) {
+        AppPreferences.savePanelFrame(window.frame)
+    }
+
+    private func animate(
+        window: NSWindow,
+        toAlpha alpha: CGFloat,
+        duration: TimeInterval,
+        completion: (() -> Void)? = nil
+    ) {
+        NSAnimationContext.runAnimationGroup { context in
+            context.duration = duration
+            context.timingFunction = CAMediaTimingFunction(name: .easeOut)
+            context.allowsImplicitAnimation = true
+            window.animator().alphaValue = alpha
+        } completionHandler: {
+            completion?()
+        }
+    }
 }
 
 private final class FloatingWindow: NSWindow {
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { true }
+}
+
+private extension CGRect {
+    var area: CGFloat {
+        width * height
+    }
 }

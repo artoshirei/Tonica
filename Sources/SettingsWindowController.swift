@@ -18,7 +18,6 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         window.titlebarAppearsTransparent = true
         window.isReleasedWhenClosed = false
         window.level = .floating
-        window.center()
         window.collectionBehavior = [.moveToActiveSpace]
         window.identifier = NSUserInterfaceItemIdentifier("tonica.settings")
         window.contentMinSize = Self.defaultSize
@@ -40,6 +39,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
 
     func present() {
         guard let window else { return }
+        positionWindowOnPrimaryScreen(window)
         showWindow(nil)
         window.orderFrontRegardless()
         window.makeMain()
@@ -50,5 +50,31 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
 
     func windowWillClose(_ notification: Notification) {
         AppController.shared.settingsDidClose()
+    }
+
+    private func positionWindowOnPrimaryScreen(_ window: NSWindow) {
+        guard let screen = primaryScreen() ?? NSScreen.main ?? NSScreen.screens.first else {
+            window.center()
+            return
+        }
+
+        let visibleFrame = screen.visibleFrame
+        let origin = CGPoint(
+            x: round(visibleFrame.midX - Self.defaultSize.width / 2),
+            y: round(visibleFrame.midY - Self.defaultSize.height / 2)
+        )
+
+        let frame = NSRect(origin: origin, size: Self.defaultSize)
+        window.setFrame(frame, display: false)
+    }
+
+    private func primaryScreen() -> NSScreen? {
+        NSScreen.screens.first { screen in
+            guard let number = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber else {
+                return false
+            }
+
+            return CGDisplayIsMain(number.uint32Value) != 0
+        }
     }
 }
