@@ -1,0 +1,45 @@
+name: Tonica
+options:
+  minimumXcodeGenVersion: 2.38.0
+packages:
+  KeyboardShortcuts:
+    url: https://github.com/sindresorhus/KeyboardShortcuts.git
+    from: "2.0.0"
+settings:
+  base:
+    PRODUCT_NAME: Tonica
+    PRODUCT_BUNDLE_IDENTIFIER: com.playground.tonica
+    MARKETING_VERSION: 1.0
+    CURRENT_PROJECT_VERSION: 1
+    SWIFT_VERSION: 6.0
+    MACOSX_DEPLOYMENT_TARGET: 14.0
+    GENERATE_INFOPLIST_FILE: YES
+    INFOPLIST_KEY_LSUIElement: YES
+    INFOPLIST_KEY_CFBundleDisplayName: Tonica
+    INFOPLIST_KEY_NSPrincipalClass: NSApplication
+    INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.music
+targets:
+  Tonica:
+    type: application
+    platform: macOS
+    sources:
+      - Sources
+      - Assets.xcassets
+      - path: Resources/Tonica.icon
+        type: file
+        buildPhase: resources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.playground.tonica
+        CODE_SIGN_STYLE: Automatic
+        CODE_SIGN_ENTITLEMENTS: Tonica.entitlements
+        SWIFT_STRICT_CONCURRENCY: complete
+        ASSETCATALOG_COMPILER_APPICON_NAME: Tonica
+        ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS: NO
+    dependencies:
+      - package: KeyboardShortcuts
+schemes:
+  Tonica:
+    build:
+      targets:
+        Tonica: all

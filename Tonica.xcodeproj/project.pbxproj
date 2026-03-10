@@ -1,0 +1,426 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		1D935033C57E8C439F2433A1 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73E6388C098C965DAE109334 /* AppDelegate.swift */; };
+		31DBB5BEAF542EEB77D0A695 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E517F9900FC591780B5B00AA /* Assets.xcassets */; };
+		450BA9318EFAB475DE1A10E6 /* TonicaApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85E0B04A6264E8550475EECA /* TonicaApp.swift */; };
+		54D945C79C2F1E03728F4E30 /* AppPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF862060BFD4935397091DE7 /* AppPreferences.swift */; };
+		5DFBACCC435383326B9A2F49 /* Tonica.icon in Resources */ = {isa = PBXBuildFile; fileRef = B3B61932826FD069BC43D840 /* Tonica.icon */; };
+		76C99B30A0E66B5F855B840B /* CircleData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03BB220F39F3CB634D0D613C /* CircleData.swift */; };
+		7918938F5C418CEF442FFF2E /* CirclePanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77F13E184CBFB016D214BC68 /* CirclePanelView.swift */; };
+		A05C419D779F39798D8D7B4E /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = 1195CE35BFBCEA6CF7E40D34 /* KeyboardShortcuts */; };
+		A38F0D5592C8E8F4005E041B /* AppLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEB043E7BDD21ACB74FE342D /* AppLogger.swift */; };
+		A80ECB2E8D9A39F6D0FAE3B8 /* StatusBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A06FF5E8E5466AA776C90376 /* StatusBarController.swift */; };
+		AA180D00C881D653679D9F4B /* FloatingPanelController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 404D761711589B2C3756D9AD /* FloatingPanelController.swift */; };
+		C37FBFF524B17BE4160DA362 /* AppController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F24F0BC28FE94F3E391A859B /* AppController.swift */; };
+		CA96A8C6BA4BC65D68A138BE /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48642E2601974A19B5FFFE59 /* SettingsView.swift */; };
+		D4A516F445DF387F09033590 /* BrandMark.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE740C29F69E3A1340AF8179 /* BrandMark.swift */; };
+		D4E12CA735614D4DD29DECB9 /* PanelHotKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8B8B434711B3F56DDEEF885 /* PanelHotKey.swift */; };
+		E19C6D2047E0EE99A2684F97 /* SettingsWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 491BAF242F2E487FF052F882 /* SettingsWindowController.swift */; };
+		FDFFBF65D0918EEAEF849D02 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23C3541C5A6CD6CDA34D6670 /* AppModel.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		03BB220F39F3CB634D0D613C /* CircleData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CircleData.swift; sourceTree = "<group>"; };
+		23C3541C5A6CD6CDA34D6670 /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
+		29A12BD4FD62BA193A5D99A2 /* Tonica.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Tonica.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		404D761711589B2C3756D9AD /* FloatingPanelController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloatingPanelController.swift; sourceTree = "<group>"; };
+		48642E2601974A19B5FFFE59 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		491BAF242F2E487FF052F882 /* SettingsWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsWindowController.swift; sourceTree = "<group>"; };
+		73E6388C098C965DAE109334 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		77F13E184CBFB016D214BC68 /* CirclePanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CirclePanelView.swift; sourceTree = "<group>"; };
+		85E0B04A6264E8550475EECA /* TonicaApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TonicaApp.swift; sourceTree = "<group>"; };
+		A06FF5E8E5466AA776C90376 /* StatusBarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBarController.swift; sourceTree = "<group>"; };
+		B3B61932826FD069BC43D840 /* Tonica.icon */ = {isa = PBXFileReference; path = Tonica.icon; sourceTree = "<group>"; };
+		CE740C29F69E3A1340AF8179 /* BrandMark.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrandMark.swift; sourceTree = "<group>"; };
+		CF862060BFD4935397091DE7 /* AppPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppPreferences.swift; sourceTree = "<group>"; };
+		D8B8B434711B3F56DDEEF885 /* PanelHotKey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PanelHotKey.swift; sourceTree = "<group>"; };
+		DEB043E7BDD21ACB74FE342D /* AppLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLogger.swift; sourceTree = "<group>"; };
+		E517F9900FC591780B5B00AA /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		F24F0BC28FE94F3E391A859B /* AppController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppController.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		70299F98709692F9C2F61ED3 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A05C419D779F39798D8D7B4E /* KeyboardShortcuts in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		22022685C9F3B297256E5BC8 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				CE740C29F69E3A1340AF8179 /* BrandMark.swift */,
+				77F13E184CBFB016D214BC68 /* CirclePanelView.swift */,
+				48642E2601974A19B5FFFE59 /* SettingsView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		2E7201433703B2AC4F9983BF /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				29A12BD4FD62BA193A5D99A2 /* Tonica.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		AC909B2EA76BB2BA940BB6DE = {
+			isa = PBXGroup;
+			children = (
+				E517F9900FC591780B5B00AA /* Assets.xcassets */,
+				CDB14FCBBF4FD010735D6545 /* Resources */,
+				D9A65CBC4E633D8E144F5AB0 /* Sources */,
+				2E7201433703B2AC4F9983BF /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		CDB14FCBBF4FD010735D6545 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				B3B61932826FD069BC43D840 /* Tonica.icon */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		D9A65CBC4E633D8E144F5AB0 /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				F24F0BC28FE94F3E391A859B /* AppController.swift */,
+				73E6388C098C965DAE109334 /* AppDelegate.swift */,
+				DEB043E7BDD21ACB74FE342D /* AppLogger.swift */,
+				23C3541C5A6CD6CDA34D6670 /* AppModel.swift */,
+				CF862060BFD4935397091DE7 /* AppPreferences.swift */,
+				03BB220F39F3CB634D0D613C /* CircleData.swift */,
+				404D761711589B2C3756D9AD /* FloatingPanelController.swift */,
+				D8B8B434711B3F56DDEEF885 /* PanelHotKey.swift */,
+				491BAF242F2E487FF052F882 /* SettingsWindowController.swift */,
+				A06FF5E8E5466AA776C90376 /* StatusBarController.swift */,
+				85E0B04A6264E8550475EECA /* TonicaApp.swift */,
+				22022685C9F3B297256E5BC8 /* Views */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		0696575A6CBCCCC7FF1CE45F /* Tonica */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B5155737A6A37EDF0DE81715 /* Build configuration list for PBXNativeTarget "Tonica" */;
+			buildPhases = (
+				17A8010A34A8DF1A78AA307C /* Sources */,
+				5C450D6C1546858829AF3350 /* Resources */,
+				70299F98709692F9C2F61ED3 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Tonica;
+			packageProductDependencies = (
+				1195CE35BFBCEA6CF7E40D34 /* KeyboardShortcuts */,
+			);
+			productName = Tonica;
+			productReference = 29A12BD4FD62BA193A5D99A2 /* Tonica.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		EBEA9DCAD2C7763F55CC6111 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					0696575A6CBCCCC7FF1CE45F = {
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = 0AB7A1C5C9A1AD692AD4B39B /* Build configuration list for PBXProject "Tonica" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = AC909B2EA76BB2BA940BB6DE;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				488FB79528CA538289F36DCA /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */,
+			);
+			preferredProjectObjectVersion = 77;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				0696575A6CBCCCC7FF1CE45F /* Tonica */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		5C450D6C1546858829AF3350 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				31DBB5BEAF542EEB77D0A695 /* Assets.xcassets in Resources */,
+				5DFBACCC435383326B9A2F49 /* Tonica.icon in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		17A8010A34A8DF1A78AA307C /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C37FBFF524B17BE4160DA362 /* AppController.swift in Sources */,
+				1D935033C57E8C439F2433A1 /* AppDelegate.swift in Sources */,
+				A38F0D5592C8E8F4005E041B /* AppLogger.swift in Sources */,
+				FDFFBF65D0918EEAEF849D02 /* AppModel.swift in Sources */,
+				54D945C79C2F1E03728F4E30 /* AppPreferences.swift in Sources */,
+				D4A516F445DF387F09033590 /* BrandMark.swift in Sources */,
+				76C99B30A0E66B5F855B840B /* CircleData.swift in Sources */,
+				7918938F5C418CEF442FFF2E /* CirclePanelView.swift in Sources */,
+				AA180D00C881D653679D9F4B /* FloatingPanelController.swift in Sources */,
+				D4E12CA735614D4DD29DECB9 /* PanelHotKey.swift in Sources */,
+				CA96A8C6BA4BC65D68A138BE /* SettingsView.swift in Sources */,
+				E19C6D2047E0EE99A2684F97 /* SettingsWindowController.swift in Sources */,
+				A80ECB2E8D9A39F6D0FAE3B8 /* StatusBarController.swift in Sources */,
+				450BA9318EFAB475DE1A10E6 /* TonicaApp.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		20D93CF9DE22C34A89CA2486 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Tonica;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.music";
+				INFOPLIST_KEY_LSUIElement = YES;
+				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.playground.tonica;
+				PRODUCT_NAME = Tonica;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		6AFC37F54C226D761A932960 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = Tonica;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = NO;
+				CODE_SIGN_ENTITLEMENTS = Tonica.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.playground.tonica;
+				SDKROOT = macosx;
+				SWIFT_STRICT_CONCURRENCY = complete;
+			};
+			name = Release;
+		};
+		AC213C815E4C65662B77C8CC /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Tonica;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.music";
+				INFOPLIST_KEY_LSUIElement = YES;
+				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.playground.tonica;
+				PRODUCT_NAME = Tonica;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		F678A8AF6AE39AE1917F1FF0 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = Tonica;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = NO;
+				CODE_SIGN_ENTITLEMENTS = Tonica.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.playground.tonica;
+				SDKROOT = macosx;
+				SWIFT_STRICT_CONCURRENCY = complete;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		0AB7A1C5C9A1AD692AD4B39B /* Build configuration list for PBXProject "Tonica" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				20D93CF9DE22C34A89CA2486 /* Debug */,
+				AC213C815E4C65662B77C8CC /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		B5155737A6A37EDF0DE81715 /* Build configuration list for PBXNativeTarget "Tonica" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F678A8AF6AE39AE1917F1FF0 /* Debug */,
+				6AFC37F54C226D761A932960 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		488FB79528CA538289F36DCA /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sindresorhus/KeyboardShortcuts.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		1195CE35BFBCEA6CF7E40D34 /* KeyboardShortcuts */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 488FB79528CA538289F36DCA /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */;
+			productName = KeyboardShortcuts;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = EBEA9DCAD2C7763F55CC6111 /* Project object */;
+}
