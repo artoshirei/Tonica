@@ -3,6 +3,8 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 RENDER_BG_SCRIPT="$ROOT_DIR/scripts/render_dmg_background.swift"
+CREATE_ALIAS_SCRIPT="$ROOT_DIR/scripts/create_alias_with_icon.swift"
+LAYOUT_TEMPLATE="$ROOT_DIR/Resources/DMGLayout/installer-layout.dsstore"
 
 if [[ $# -lt 2 ]]; then
   echo "usage: $0 <app_path> <output_dmg_path> [volume_name]" >&2
@@ -79,7 +81,12 @@ if [[ -f "$ICON_SOURCE" ]]; then
 fi
 
 if [[ -n "${CI:-}" ]]; then
-  ln -sfn /Applications "$MOUNT_POINT/Applications"
+  mkdir -p "$MOUNT_POINT/.background"
+  cp "$BACKGROUND_PNG" "$MOUNT_POINT/.background/background.png"
+  swift "$CREATE_ALIAS_SCRIPT" "/Applications" "$MOUNT_POINT/Applications"
+  if [[ -f "$LAYOUT_TEMPLATE" ]]; then
+    cp "$LAYOUT_TEMPLATE" "$MOUNT_POINT/.DS_Store"
+  fi
 else
   mkdir -p "$MOUNT_POINT/.background"
   cp "$BACKGROUND_PNG" "$MOUNT_POINT/.background/background.png"
