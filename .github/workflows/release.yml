@@ -152,19 +152,27 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          RUNNER_JSON="$(gh api repos/${GITHUB_REPOSITORY}/actions/runners)"
-          TOTAL_RUNNERS="$(jq -r '.total_count' <<<"$RUNNER_JSON")"
-          SELF_HOSTED_COUNT="$(jq '[.runners[] | select(any(.labels[]; .name == "self-hosted"))] | length' <<<"$RUNNER_JSON")"
+          if RUNNER_JSON="$(gh api repos/${GITHUB_REPOSITORY}/actions/runners 2>/dev/null)"; then
+            TOTAL_RUNNERS="$(jq -r '.total_count' <<<"$RUNNER_JSON")"
+            SELF_HOSTED_COUNT="$(jq '[.runners[] | select(any(.labels[]; .name == "self-hosted"))] | length' <<<"$RUNNER_JSON")"
 
-          {
-            echo "## Runner Audit"
-            echo ""
-            echo "- Configured self-hosted runners: ${SELF_HOSTED_COUNT}"
-            echo "- Total configured repository runners: ${TOTAL_RUNNERS}"
-            if [[ "${SELF_HOSTED_COUNT}" -eq 0 ]]; then
-              echo "- Release workflow currently runs on GitHub-hosted \`macos-15\`, not a self-hosted macOS runner."
-            fi
-          } >> "$GITHUB_STEP_SUMMARY"
+            {
+              echo "## Runner Audit"
+              echo ""
+              echo "- Configured self-hosted runners: ${SELF_HOSTED_COUNT}"
+              echo "- Total configured repository runners: ${TOTAL_RUNNERS}"
+              if [[ "${SELF_HOSTED_COUNT}" -eq 0 ]]; then
+                echo "- Release workflow currently runs on GitHub-hosted \`macos-15\`, not a self-hosted macOS runner."
+              fi
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            {
+              echo "## Runner Audit"
+              echo ""
+              echo "- Repository runner inventory was not readable with the workflow token."
+              echo "- Known state from local verification: this repo currently has no configured self-hosted runners, so stable releases run on GitHub-hosted \`macos-15\`."
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
 
   build-candidate:
     name: Build Candidate
