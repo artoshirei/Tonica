@@ -10,7 +10,7 @@ Context:
 
 - This is for `artoshi.work/tonica`.
 - The stable download button URL should be `https://artoshi.work/tonica/download`.
-- That download route will redirect to `https://github.com/artemiscosmo/Tonica/releases/latest/download/Tonica.dmg`.
+- That download route will redirect to `https://github.com/artoshirei/Tonica/releases/latest/download/Tonica.dmg`.
 - Tonica is a macOS menu bar music theory utility.
 - Primary audience: musicians, producers, and songwriters who want a clean circle-of-fifths helper always available from the menu bar.
 

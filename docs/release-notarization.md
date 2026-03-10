@@ -4,7 +4,7 @@ Tonica ships as a notarized DMG attached to GitHub Releases.
 
 Stable public download URL:
 
-- `https://github.com/artemiscosmo/Tonica/releases/latest/download/Tonica.dmg`
+- `https://github.com/artoshirei/Tonica/releases/latest/download/Tonica.dmg`
 
 The release flow:
 
@@ -62,4 +62,3 @@ The helper also supports:
 - `APPLE_ID` + `APPLE_APP_SPECIFIC_PASSWORD` + `APPLE_TEAM_ID`
 
 Output artifacts land in `dist/`.
-
