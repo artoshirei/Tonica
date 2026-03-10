@@ -34,7 +34,7 @@
             }
           ],
           "glass" : true,
-          "hidden" : true,
+          "hidden" : false,
           "image-name" : "1 – Layer.svg",
           "name" : "1 – Layer",
           "opacity" : 1

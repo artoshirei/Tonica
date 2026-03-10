@@ -66,7 +66,6 @@ if [[ -z "$DEVICE" || ! -d "$MOUNT_POINT" || -z "$MOUNT_NAME" ]]; then
 fi
 
 ditto "$STAGING_DIR/$APP_NAME" "$MOUNT_POINT/$APP_NAME"
-ln -sfn /Applications "$MOUNT_POINT/Applications"
 
 # Give Finder and IconServices a moment to index the copied app bundle before
 # we persist the DMG window layout, otherwise the app tile can get cached with
@@ -90,6 +89,11 @@ tell application "Finder"
     delay 1
 
     set dmgWindow to container window
+    if not (exists item "Applications" of dmgWindow) then
+      set appsAlias to make new alias file at dmgWindow to POSIX file "/Applications"
+      set name of appsAlias to "Applications"
+    end if
+
     set current view of dmgWindow to icon view
     set toolbar visible of dmgWindow to false
     set statusbar visible of dmgWindow to false
