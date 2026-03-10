@@ -8,6 +8,7 @@ enum AppLogger {
     static let lifecycle = Logger(subsystem: subsystem, category: "lifecycle")
     static let hotKey = Logger(subsystem: subsystem, category: "hotkey")
     static let panel = Logger(subsystem: subsystem, category: "panel")
+    static let updates = Logger(subsystem: subsystem, category: "updates")
 }
 
 func describeOSStatus(_ status: OSStatus) -> String {

@@ -19,6 +19,7 @@ env:
   PROJECT_PATH: Tonica.xcodeproj
   DERIVED_DATA_PATH: .derived_ci
   NOTARY_KEYCHAIN_PROFILE: tonica-ci-notary
+  SPARKLE_APPCAST_PATH: docs/appcast.xml
 
 jobs:
   build-package:
@@ -274,10 +275,54 @@ jobs:
               --notes-file "$NOTES_FILE"
           fi
 
+      - name: Generate Sparkle appcast
+        env:
+          TAG: ${{ steps.version.outputs.TAG }}
+          SPARKLE_PRIVATE_ED_KEY: ${{ secrets.SPARKLE_PRIVATE_ED_KEY }}
+        run: |
+          chmod +x ./scripts/generate_appcast.sh
+
+          APPCAST_PATH="$RUNNER_TEMP/appcast.xml"
+          ./scripts/generate_appcast.sh \
+            "$DMG_PATH" \
+            "$APPCAST_PATH" \
+            "https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/" \
+            "https://github.com/${GITHUB_REPOSITORY}/releases/tag/${TAG}" \
+            "https://artoshi.work/tonica"
+
+          echo "APPCAST_PATH=$APPCAST_PATH" >> "$GITHUB_ENV"
+
+      - name: Publish Sparkle appcast
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git fetch origin main
+          git checkout -B main origin/main
+
+          mkdir -p "$(dirname "$SPARKLE_APPCAST_PATH")"
+          cp "$APPCAST_PATH" "$SPARKLE_APPCAST_PATH"
+
+          if git diff --quiet -- "$SPARKLE_APPCAST_PATH"; then
+            echo "Sparkle appcast unchanged"
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$SPARKLE_APPCAST_PATH"
+          git commit -m "Update Sparkle appcast for ${{ steps.version.outputs.TAG }}"
+          git push origin HEAD:main
+
       - name: Verify latest release asset URL
         run: |
           curl --fail --silent --show-error --location --head \
             "https://github.com/${GITHUB_REPOSITORY}/releases/latest/download/Tonica.dmg" \
+            >/dev/null
+
+      - name: Verify Sparkle appcast URL
+        run: |
+          curl --fail --silent --show-error --location \
+            "https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/main/${SPARKLE_APPCAST_PATH}" \
             >/dev/null
 
       - name: Upload diagnostics

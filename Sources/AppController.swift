@@ -17,6 +17,7 @@ final class AppController {
     private var statusBarController: StatusBarController?
     private var panelController: FloatingPanelController?
     private var settingsWindowController: SettingsWindowController?
+    private var updaterController: AppUpdaterController?
     private var hotKeyDefaultsObserver: NSObjectProtocol?
     private var hasRegisteredHotKeyHandler = false
 
@@ -38,6 +39,16 @@ final class AppController {
         if settingsWindowController == nil {
             settingsWindowController = SettingsWindowController(controller: self)
             AppLogger.lifecycle.debug("Created settings window controller")
+        }
+
+        if updaterController == nil {
+            updaterController = AppUpdaterController()
+            updaterController?.onUpdateCycleFinished = { [weak self] in
+                Task { @MainActor [weak self] in
+                    self?.updateActivationPolicyIfNeeded(reason: "sparkleCycleFinished")
+                }
+            }
+            AppLogger.lifecycle.debug("Created Sparkle updater controller")
         }
 
         PanelHotKey.ensureDefaultShortcut()
@@ -72,6 +83,17 @@ final class AppController {
         AppLogger.lifecycle.notice("Opening settings window")
         setActivationPolicy(.regular, reason: "settingsOpen")
         settingsWindowController?.present()
+    }
+
+    func checkForUpdates() {
+        start()
+        AppLogger.updates.notice("Checking for updates with Sparkle")
+        setActivationPolicy(.regular, reason: "sparkleCheck")
+        updaterController?.checkForUpdates()
+    }
+
+    var canCheckForUpdates: Bool {
+        updaterController?.canCheckForUpdates ?? false
     }
 
     func revealPanel(source: PanelToggleSource = .direct) {

@@ -6,6 +6,10 @@ Stable public download URL:
 
 - `https://github.com/artoshirei/Tonica/releases/latest/download/Tonica.dmg`
 
+Stable Sparkle appcast URL:
+
+- `https://raw.githubusercontent.com/artoshirei/Tonica/main/docs/appcast.xml`
+
 The release flow:
 
 1. builds a signed Release archive with the `Developer ID Application` certificate,
@@ -32,6 +36,8 @@ The release flow:
   App Store Connect API key ID.
 - `APPLE_NOTARY_ISSUER_ID`
   App Store Connect issuer ID for that key.
+- `SPARKLE_PRIVATE_ED_KEY`
+  Exported private Sparkle EdDSA key text from `generate_keys -x`.
 
 ## Release Workflow
 
@@ -42,6 +48,7 @@ The release flow:
 5. Push the tag.
 
 GitHub Actions will build, notarize, package, and publish `Tonica.dmg`.
+It will also regenerate and publish `docs/appcast.xml` for Sparkle.
 
 `workflow_dispatch` stays available as a manual republish path from `main`.
 
