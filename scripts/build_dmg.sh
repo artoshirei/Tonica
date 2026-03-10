@@ -73,18 +73,21 @@ ditto "$STAGING_DIR/$APP_NAME" "$MOUNT_POINT/$APP_NAME"
 sleep 2
 /System/Library/Frameworks/CoreServices.framework/Versions/Current/Frameworks/LaunchServices.framework/Versions/Current/Support/lsregister -f -R "$MOUNT_POINT/$APP_NAME" >/dev/null 2>&1 || true
 
-mkdir -p "$MOUNT_POINT/.background"
-cp "$BACKGROUND_PNG" "$MOUNT_POINT/.background/background.png"
-
 if [[ -f "$ICON_SOURCE" ]]; then
   cp "$ICON_SOURCE" "$MOUNT_POINT/.VolumeIcon.icns"
   "$(xcrun --find SetFile)" -a C "$MOUNT_POINT" 2>/dev/null || true
 fi
 
-open -ga Finder >/dev/null 2>&1 || true
+if [[ -n "${CI:-}" ]]; then
+  ln -sfn /Applications "$MOUNT_POINT/Applications"
+else
+  mkdir -p "$MOUNT_POINT/.background"
+  cp "$BACKGROUND_PNG" "$MOUNT_POINT/.background/background.png"
 
-for _pass in 1 2; do
-  osascript <<EOF
+  open -ga Finder >/dev/null 2>&1 || true
+
+  for _pass in 1 2; do
+    osascript <<EOF
 with timeout of 300 seconds
 tell application "Finder"
   activate
@@ -123,8 +126,9 @@ tell application "Finder"
 end tell
 end timeout
 EOF
-  sleep 1
-done
+    sleep 1
+  done
+fi
 
 for dotitem in "$MOUNT_POINT"/.*; do
   [[ "$(basename "$dotitem")" == "." || "$(basename "$dotitem")" == ".." ]] && continue
