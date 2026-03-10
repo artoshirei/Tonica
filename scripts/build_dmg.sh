@@ -42,10 +42,6 @@ ditto "$APP_PATH" "$STAGING_DIR/$APP_NAME"
 swift "$RENDER_BG_SCRIPT" "$BACKGROUND_PNG"
 
 ICON_SOURCE="$APP_PATH/Contents/Resources/Tonica.icns"
-if [[ ! -f "$ICON_SOURCE" ]]; then
-  echo "missing Tonica icon at $ICON_SOURCE" >&2
-  exit 1
-fi
 
 STAGING_KB="$(du -sk "$STAGING_DIR" | awk '{print $1}')"
 SIZE_MB=$(( (STAGING_KB + 24 * 1024 + 1023) / 1024 ))
@@ -75,8 +71,10 @@ ln -sfn /Applications "$MOUNT_POINT/Applications"
 mkdir -p "$MOUNT_POINT/.background"
 cp "$BACKGROUND_PNG" "$MOUNT_POINT/.background/background.png"
 
-cp "$ICON_SOURCE" "$MOUNT_POINT/.VolumeIcon.icns"
-"$(xcrun --find SetFile)" -a C "$MOUNT_POINT" 2>/dev/null || true
+if [[ -f "$ICON_SOURCE" ]]; then
+  cp "$ICON_SOURCE" "$MOUNT_POINT/.VolumeIcon.icns"
+  "$(xcrun --find SetFile)" -a C "$MOUNT_POINT" 2>/dev/null || true
+fi
 
 for _pass in 1 2; do
   osascript <<EOF
@@ -129,4 +127,3 @@ rm -f "$OUTPUT_DMG_PATH"
 hdiutil convert "$RW_DMG_PATH" -format ULFO -o "$OUTPUT_DMG_PATH" >/dev/null
 
 echo "Built styled DMG: $OUTPUT_DMG_PATH"
-
