@@ -135,13 +135,18 @@ final class AppController {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            guard let self else { return }
-            let previousDescription = self.model.shortcutDescription
-            self.refreshShortcutDescription()
-            guard self.model.shortcutDescription != previousDescription else { return }
-            self.refreshStatusItem()
-            AppLogger.hotKey.notice("Updated panel hot key to \(self.model.shortcutDescription, privacy: .public)")
+            Task { @MainActor [weak self] in
+                self?.handleShortcutDefaultsChange()
+            }
         }
+    }
+
+    private func handleShortcutDefaultsChange() {
+        let previousDescription = model.shortcutDescription
+        refreshShortcutDescription()
+        guard model.shortcutDescription != previousDescription else { return }
+        refreshStatusItem()
+        AppLogger.hotKey.notice("Updated panel hot key to \(self.model.shortcutDescription, privacy: .public)")
     }
 
     private func refreshShortcutDescription() {

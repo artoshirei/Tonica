@@ -1250,18 +1250,26 @@ private struct GlassCard: ViewModifier {
     let tint: Color
 
     func body(content: Content) -> some View {
+        #if compiler(>=6.2)
         if #available(macOS 26.0, *) {
             content
                 .background(tint, in: .rect(cornerRadius: cornerRadius))
                 .glassEffect(.regular, in: .rect(cornerRadius: cornerRadius))
         } else {
-            content
-                .background(.ultraThinMaterial, in: .rect(cornerRadius: cornerRadius))
-                .overlay {
-                    RoundedRectangle(cornerRadius: cornerRadius)
-                        .stroke(.white.opacity(0.08), lineWidth: 1)
-                }
+            legacyBody(for: content)
         }
+        #else
+        legacyBody(for: content)
+        #endif
+    }
+
+    private func legacyBody(for content: Content) -> some View {
+        content
+            .background(.ultraThinMaterial, in: .rect(cornerRadius: cornerRadius))
+            .overlay {
+                RoundedRectangle(cornerRadius: cornerRadius)
+                    .stroke(.white.opacity(0.08), lineWidth: 1)
+            }
     }
 }
 
