@@ -85,6 +85,13 @@ final class AppController {
         settingsWindowController?.present()
     }
 
+    func showAboutPanel() {
+        start()
+        AppLogger.lifecycle.notice("Opening about panel")
+        NSApp.activate(ignoringOtherApps: true)
+        NSApp.orderFrontStandardAboutPanel(options: AppMetadata.aboutPanelOptions)
+    }
+
     func checkForUpdates() {
         start()
         AppLogger.updates.notice("Checking for updates with Sparkle")

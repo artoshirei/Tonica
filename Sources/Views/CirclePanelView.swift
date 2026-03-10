@@ -815,8 +815,9 @@ private struct PanelMetrics {
 
     var wheelFrameSize: CGFloat {
         let availableWidth = size.width - (outerPadding * 2) - detailWidth - columnSpacing - (cardPadding * 2)
-        let availableHeight = size.height - (outerPadding * 2) - 220
-        return max(360, min(availableWidth, availableHeight, 660))
+        let reservedHeight = max(280, size.height * 0.34)
+        let availableHeight = size.height - (outerPadding * 2) - reservedHeight
+        return max(360, min(availableWidth, availableHeight, 540))
     }
 }
 

@@ -5,11 +5,13 @@ final class StatusBarController: NSObject, NSMenuDelegate {
     private weak var controller: AppController?
     private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
     private let menu = NSMenu()
+    private let aboutItem = NSMenuItem(title: "", action: #selector(openAboutPanel), keyEquivalent: "")
+    private let versionItem = NSMenuItem(title: "", action: nil, keyEquivalent: "")
     private let toggleItem = NSMenuItem(title: "Reveal Circle", action: #selector(togglePanel), keyEquivalent: "")
     private let checkForUpdatesItem = NSMenuItem(title: "Check for Updates…", action: #selector(checkForUpdates), keyEquivalent: "")
     private let shortcutItem = NSMenuItem(title: "", action: nil, keyEquivalent: "")
-    private let settingsItem = NSMenuItem(title: "Settings", action: #selector(openSettings), keyEquivalent: "")
-    private let quitItem = NSMenuItem(title: "Quit", action: #selector(quitApp), keyEquivalent: "")
+    private let settingsItem = NSMenuItem(title: "Settings…", action: #selector(openSettings), keyEquivalent: "")
+    private let quitItem = NSMenuItem(title: "", action: #selector(quitApp), keyEquivalent: "")
     private var animationTimer: Timer?
     private let animationStartDate = Date()
 
@@ -30,19 +32,25 @@ final class StatusBarController: NSObject, NSMenuDelegate {
 
     private func configureMenu() {
         menu.delegate = self
+        aboutItem.title = "About \(AppMetadata.appName)"
+        aboutItem.target = self
+        versionItem.title = AppMetadata.menuVersionTitle
+        versionItem.isEnabled = false
         toggleItem.target = self
         checkForUpdatesItem.target = self
         shortcutItem.isEnabled = false
         settingsItem.target = self
+        quitItem.title = "Quit \(AppMetadata.appName)"
         quitItem.target = self
 
         menu.items = [
+            aboutItem,
+            versionItem,
+            .separator(),
             toggleItem,
-            .separator(),
-            checkForUpdatesItem,
-            .separator(),
             shortcutItem,
             .separator(),
+            checkForUpdatesItem,
             settingsItem,
             .separator(),
             quitItem
@@ -97,6 +105,11 @@ final class StatusBarController: NSObject, NSMenuDelegate {
     @objc
     private func togglePanel() {
         controller?.togglePanelFromMenuBar()
+    }
+
+    @objc
+    private func openAboutPanel() {
+        controller?.showAboutPanel()
     }
 
     @objc

@@ -21,6 +21,7 @@
 		AA180D00C881D653679D9F4B /* FloatingPanelController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 404D761711589B2C3756D9AD /* FloatingPanelController.swift */; };
 		BC51DA27BD823FC471488424 /* AppUpdaterController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F533F363748A5676656301A7 /* AppUpdaterController.swift */; };
 		C37FBFF524B17BE4160DA362 /* AppController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F24F0BC28FE94F3E391A859B /* AppController.swift */; };
+		C6D29B6A42BAA41959F65158 /* AppMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = 118E71F2DFD7C6B9B4E4F840 /* AppMetadata.swift */; };
 		CA96A8C6BA4BC65D68A138BE /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48642E2601974A19B5FFFE59 /* SettingsView.swift */; };
 		D4A516F445DF387F09033590 /* BrandMark.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE740C29F69E3A1340AF8179 /* BrandMark.swift */; };
 		D4E12CA735614D4DD29DECB9 /* PanelHotKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8B8B434711B3F56DDEEF885 /* PanelHotKey.swift */; };
@@ -30,6 +31,7 @@
 
 /* Begin PBXFileReference section */
 		03BB220F39F3CB634D0D613C /* CircleData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CircleData.swift; sourceTree = "<group>"; };
+		118E71F2DFD7C6B9B4E4F840 /* AppMetadata.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppMetadata.swift; sourceTree = "<group>"; };
 		23C3541C5A6CD6CDA34D6670 /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
 		29A12BD4FD62BA193A5D99A2 /* Tonica.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Tonica.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		404D761711589B2C3756D9AD /* FloatingPanelController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloatingPanelController.swift; sourceTree = "<group>"; };
@@ -104,6 +106,7 @@
 				F24F0BC28FE94F3E391A859B /* AppController.swift */,
 				73E6388C098C965DAE109334 /* AppDelegate.swift */,
 				DEB043E7BDD21ACB74FE342D /* AppLogger.swift */,
+				118E71F2DFD7C6B9B4E4F840 /* AppMetadata.swift */,
 				23C3541C5A6CD6CDA34D6670 /* AppModel.swift */,
 				CF862060BFD4935397091DE7 /* AppPreferences.swift */,
 				F533F363748A5676656301A7 /* AppUpdaterController.swift */,
@@ -199,6 +202,7 @@
 				C37FBFF524B17BE4160DA362 /* AppController.swift in Sources */,
 				1D935033C57E8C439F2433A1 /* AppDelegate.swift in Sources */,
 				A38F0D5592C8E8F4005E041B /* AppLogger.swift in Sources */,
+				C6D29B6A42BAA41959F65158 /* AppMetadata.swift in Sources */,
 				FDFFBF65D0918EEAEF849D02 /* AppModel.swift in Sources */,
 				54D945C79C2F1E03728F4E30 /* AppPreferences.swift in Sources */,
 				BC51DA27BD823FC471488424 /* AppUpdaterController.swift in Sources */,
@@ -251,7 +255,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 4;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
@@ -272,7 +276,7 @@
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = "Tonica-Info.plist";
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.0.2;
+				MARKETING_VERSION = 1.0.3;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -337,7 +341,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 4;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -352,7 +356,7 @@
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = "Tonica-Info.plist";
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.0.2;
+				MARKETING_VERSION = 1.0.3;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.playground.tonica;
