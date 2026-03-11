@@ -8,6 +8,8 @@ struct CirclePanelView: View {
 
     private var activeFocus: SegmentFocus? { model.activeFocus }
     private var activeSlice: CircleSlice? { model.activeSlice }
+    private var previewFocus: SegmentFocus? { model.inspectorPreviewFocus }
+    private var detailFocus: SegmentFocus? { model.inspectorDetailFocus }
     private var theme: PanelTheme { model.theme }
 
     var body: some View {
@@ -17,73 +19,85 @@ struct CirclePanelView: View {
             ZStack {
                 PanelBackground(theme: theme)
 
-                HStack(alignment: .top, spacing: metrics.columnSpacing) {
-                    leftColumn(metrics: metrics)
-                    detailColumn(metrics: metrics)
+                ScrollView(.vertical) {
+                    VStack(spacing: 18) {
+                        topBar
+                        contentColumn(metrics: metrics)
+                    }
+                    .padding(metrics.outerPadding)
+                    .frame(maxWidth: .infinity, alignment: .top)
                 }
-                .padding(metrics.outerPadding)
+                .scrollIndicators(.hidden)
+                .scrollBounceBehavior(.basedOnSize)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             }
         }
     }
 
-    @ViewBuilder
-    private func leftColumn(metrics: PanelMetrics) -> some View {
-        VStack(alignment: .leading, spacing: 22) {
-            topBar
+    private func contentColumn(metrics: PanelMetrics) -> some View {
+        VStack(spacing: metrics.contentSpacing) {
+            CircleWheelView(
+                model: model,
+                metrics: metrics,
+                theme: theme,
+                reduceMotion: reduceMotion
+            )
+            .frame(width: metrics.wheelFrameSize, height: metrics.wheelFrameSize)
+            .frame(maxWidth: .infinity)
 
-            VStack(alignment: .leading, spacing: 22) {
-                insightStrip
-
-                CircleWheelView(
-                    model: model,
-                    metrics: metrics,
-                    theme: theme,
-                    reduceMotion: reduceMotion
+            bottomRegion(metrics: metrics)
+                .frame(
+                    minHeight: metrics.compactInspectorHeight,
+                    alignment: .top
                 )
-                .frame(width: metrics.wheelFrameSize, height: metrics.wheelFrameSize)
-                .frame(maxWidth: .infinity)
-
-                footerSummary
-            }
-            .padding(metrics.cardPadding)
-            .panelCardStyle(cornerRadius: 34, tint: .white.opacity(0.035))
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .padding(metrics.cardPadding)
+        .panelShellStyle(cornerRadius: 34)
+        .frame(maxWidth: .infinity, alignment: .top)
     }
 
     @ViewBuilder
-    private func detailColumn(metrics: PanelMetrics) -> some View {
-        DetailPanelView(
-            model: model,
-            activeSlice: activeSlice,
-            activeFocus: activeFocus,
-            theme: theme,
-            width: metrics.detailWidth,
-            reduceMotion: reduceMotion,
-            selectionNamespace: selectionNamespace
-        )
-        .frame(width: metrics.detailWidth)
-        .frame(maxHeight: .infinity)
+    private func bottomRegion(metrics: PanelMetrics) -> some View {
+        switch model.inspectorVisibility {
+        case .hidden:
+            Color.clear
+                .frame(maxWidth: .infinity)
+        case .preview:
+            if let previewFocus, let previewSlice = slice(for: previewFocus) {
+                CompactInspectorView(
+                    model: model,
+                    focus: previewFocus,
+                    slice: previewSlice,
+                    theme: theme,
+                    counterClockwiseLabel: model.previousSlice(for: previewFocus.index).label(for: previewFocus.ring),
+                    clockwiseLabel: model.nextSlice(for: previewFocus.index).label(for: previewFocus.ring),
+                    reduceMotion: reduceMotion
+                )
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        case .expanded:
+            if let detailFocus, let detailSlice = slice(for: detailFocus) {
+                ExpandedInspectorView(
+                    model: model,
+                    activeSlice: detailSlice,
+                    activeFocus: detailFocus,
+                    theme: theme,
+                    reduceMotion: reduceMotion,
+                    selectionNamespace: selectionNamespace
+                )
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
     }
 
     private var topBar: some View {
-        HStack(alignment: .top, spacing: 18) {
-            HStack(alignment: .center, spacing: 16) {
-                BrandMark(style: .logo)
-                    .frame(width: 58, height: 58)
+        HStack(alignment: .center, spacing: 10) {
+            BrandMark(style: .logo)
+                .frame(width: 26, height: 26)
 
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("Tonica")
-                        .font(.system(size: 34, weight: .heavy, design: .rounded))
-                        .foregroundStyle(.white)
-
-                    Text("A fast harmony compass for key choice, motion, and progressions.")
-                        .font(.system(size: 14, weight: .medium, design: .rounded))
-                        .foregroundStyle(.white.opacity(0.66))
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-            }
+            Text("Tonica")
+                .font(.system(size: 18, weight: .black, design: .serif))
+                .foregroundStyle(.white.opacity(0.6))
 
             Spacer(minLength: 16)
 
@@ -91,94 +105,9 @@ struct CirclePanelView: View {
         }
     }
 
-    private var insightStrip: some View {
-        HStack(spacing: 12) {
-            RevealStateBadge(title: revealStateTitle, detail: revealStateDetail, theme: theme)
-
-            Spacer(minLength: 12)
-
-            StatusPill(
-                title: activeFocus?.ring.shortLabel ?? "Focus",
-                value: activeSlice?.label(for: activeFocus?.ring ?? .major) ?? "Ready",
-                emphasis: activeSlice != nil ? theme.highlightColor : .white.opacity(0.16)
-            )
-
-            if model.selectedFocus != nil {
-                Button("Clear Pin") {
-                    withAnimation(panelAnimation) {
-                        model.clearSelection()
-                    }
-                }
-                .buttonStyle(PressableCapsuleButtonStyle())
-            }
-        }
-    }
-
-    @ViewBuilder
-    private var footerSummary: some View {
-        Group {
-            if let activeFocus, let activeSlice {
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack(alignment: .firstTextBaseline) {
-                        Text(activeSlice.label(for: activeFocus.ring))
-                            .font(.system(size: 24, weight: .bold, design: .rounded))
-                            .foregroundStyle(.white)
-
-                        Text(activeFocus.ring.title.uppercased())
-                            .font(.system(size: 10, weight: .black, design: .rounded))
-                            .foregroundStyle(.white.opacity(0.48))
-                            .tracking(1.4)
-                    }
-
-                    Text(focusSummary)
-                        .font(.system(size: 13, weight: .medium, design: .rounded))
-                        .foregroundStyle(.white.opacity(0.64))
-
-                    LinearMeter(theme: theme)
-                }
-                .transition(.move(edge: .bottom).combined(with: .opacity))
-            } else {
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("Start on the wheel")
-                        .font(.system(size: 22, weight: .bold, design: .rounded))
-                        .foregroundStyle(.white)
-
-                    Text("Hover for a quick read or click once to pin a key and compare nearby options.")
-                        .font(.system(size: 13, weight: .medium, design: .rounded))
-                        .foregroundStyle(.white.opacity(0.62))
-                }
-                .transition(.opacity)
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .animation(panelAnimation, value: model.activeFocus)
-        .animation(panelAnimation, value: model.selectedFocus)
-    }
-
-    private var revealStateTitle: String {
-        if model.hoveredFocus != nil { return "Preview" }
-        if model.selectedFocus != nil { return "Pinned" }
-        return "Ready"
-    }
-
-    private var revealStateDetail: String {
-        if let hoveredFocus = model.hoveredFocus {
-            return model.label(for: hoveredFocus)
-        }
-        if let selectedFocus = model.selectedFocus {
-            return model.label(for: selectedFocus)
-        }
-        return "Hover or click a key"
-    }
-
-    private var focusSummary: String {
-        guard let activeFocus else { return "" }
-
-        if model.hoveredFocus == activeFocus {
-            return "Quick preview. Click to lock it in and keep the theory panel stable."
-        }
-
-        return "Pinned for comparison. Walk clockwise for tension, counter-clockwise for release."
+    private func slice(for focus: SegmentFocus) -> CircleSlice? {
+        guard model.slices.indices.contains(focus.index) else { return nil }
+        return model.slices[focus.index]
     }
 
     private var panelAnimation: Animation {
@@ -215,9 +144,9 @@ private struct CircleWheelView: View {
             .onContinuousHover(coordinateSpace: .local) { phase in
                 switch phase {
                 case .active(let location):
-                    model.hoveredFocus = focus(at: location, size: canvasSize)
+                    model.updateHover(focus(at: location, size: canvasSize))
                 case .ended:
-                    model.hoveredFocus = nil
+                    model.updateHover(nil)
                 }
             }
             .gesture(
@@ -432,81 +361,139 @@ private struct CircleWheelView: View {
     }
 }
 
-private struct DetailPanelView: View {
+private struct CompactInspectorView: View {
     let model: AppModel
-    let activeSlice: CircleSlice?
-    let activeFocus: SegmentFocus?
+    let focus: SegmentFocus
+    let slice: CircleSlice
     let theme: PanelTheme
-    let width: CGFloat
+    let counterClockwiseLabel: String
+    let clockwiseLabel: String
+    let reduceMotion: Bool
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 16) {
+            VStack(alignment: .leading, spacing: 3) {
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Text(slice.label(for: focus.ring))
+                        .font(.system(size: 22, weight: .black, design: .rounded))
+                        .foregroundStyle(.white)
+
+                    Text(focus.ring.shortLabel)
+                        .font(.system(size: 12, weight: .bold, design: .rounded))
+                        .foregroundStyle(.white.opacity(0.4))
+                }
+
+                Text("\(slice.signature)  ·  \(slice.chordNotes(for: focus.ring).joined(separator: " "))")
+                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                    .foregroundStyle(.white.opacity(0.48))
+            }
+
+            Spacer(minLength: 8)
+
+            HStack(spacing: 8) {
+                DirectionChip(title: "CCW", value: counterClockwiseLabel, accent: theme.highlightColor)
+                DirectionChip(title: "CW", value: clockwiseLabel, accent: theme.accentGlowColor)
+            }
+
+            Button("Details") {
+                withAnimation(panelAnimation) {
+                    model.expandInspector()
+                }
+            }
+            .buttonStyle(PressableCapsuleButtonStyle(highlight: theme.highlightColor))
+
+            Button {
+                withAnimation(panelAnimation) {
+                    model.dismissInspector()
+                }
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(.white.opacity(0.56))
+            }
+            .buttonStyle(PressableCapsuleButtonStyle())
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 14)
+        .background(.black.opacity(0.18), in: .rect(cornerRadius: 22))
+        .overlay {
+            RoundedRectangle(cornerRadius: 22)
+                .stroke(.white.opacity(0.07), lineWidth: 1)
+        }
+    }
+
+    private var panelAnimation: Animation {
+        reduceMotion ? .easeOut(duration: 0.10) : .easeOut(duration: 0.18)
+    }
+}
+
+private struct ExpandedInspectorView: View {
+    let model: AppModel
+    let activeSlice: CircleSlice
+    let activeFocus: SegmentFocus
+    let theme: PanelTheme
     let reduceMotion: Bool
     let selectionNamespace: Namespace.ID
 
+    private let columns = [
+        GridItem(.adaptive(minimum: 260, maximum: 420), spacing: 14, alignment: .top)
+    ]
+
     var body: some View {
-        Group {
-            if let activeSlice, let activeFocus {
-                ScrollView(.vertical) {
-                    VStack(alignment: .leading, spacing: 18) {
-                        heroSection(activeSlice: activeSlice, activeFocus: activeFocus)
-                        revealSection(activeSlice: activeSlice, activeFocus: activeFocus)
-                        harmonySection(activeSlice: activeSlice, activeFocus: activeFocus)
-                        progressionsSection(activeSlice: activeSlice, activeFocus: activeFocus)
-                        movementSection(activeSlice: activeSlice, activeFocus: activeFocus)
+        VStack(alignment: .leading, spacing: 18) {
+            HStack(spacing: 12) {
+                Spacer(minLength: 0)
+
+                Button("Collapse") {
+                    withAnimation(panelAnimation) {
+                        model.collapseInspector()
                     }
-                    .padding(24)
                 }
-                .scrollIndicators(.hidden)
-                .scrollBounceBehavior(.basedOnSize)
-                .transition(.move(edge: .trailing).combined(with: .opacity))
-            } else {
-                emptyState
-                    .padding(24)
-                    .transition(.opacity)
+                .buttonStyle(PressableCapsuleButtonStyle())
+
+                Button {
+                    withAnimation(panelAnimation) {
+                        model.dismissInspector()
+                    }
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(.white.opacity(0.56))
+                }
+                .buttonStyle(PressableCapsuleButtonStyle())
             }
+
+            VStack(alignment: .leading, spacing: 14) {
+                heroSection(activeSlice: activeSlice, activeFocus: activeFocus)
+
+                LazyVGrid(columns: columns, alignment: .leading, spacing: 14) {
+                    revealSection(activeSlice: activeSlice, activeFocus: activeFocus)
+                    harmonySection(activeSlice: activeSlice, activeFocus: activeFocus)
+                    progressionsSection(activeSlice: activeSlice, activeFocus: activeFocus)
+                    movementSection(activeSlice: activeSlice, activeFocus: activeFocus)
+                }
+            }
+            .padding(.trailing, 4)
         }
-        .panelCardStyle(cornerRadius: 34, tint: .white.opacity(0.03))
-        .shadow(color: .black.opacity(0.30), radius: 24, y: 14)
+        .padding(22)
+        .background(.black.opacity(0.16), in: .rect(cornerRadius: 30))
+        .overlay {
+            RoundedRectangle(cornerRadius: 30)
+                .stroke(.white.opacity(0.07), lineWidth: 1)
+        }
         .animation(panelAnimation, value: activeFocus)
         .animation(panelAnimation, value: model.selectedFocus)
     }
 
-    private var emptyState: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            Text("A cleaner way to think in keys")
-                .font(.system(size: 30, weight: .bold, design: .rounded))
-                .foregroundStyle(.white)
-
-            Text("Select a slice to surface the harmony map, useful progressions, and the strongest next moves around the circle.")
-                .font(.system(size: 14, weight: .medium, design: .rounded))
-                .foregroundStyle(.white.opacity(0.62))
-                .fixedSize(horizontal: false, vertical: true)
-
-            VStack(alignment: .leading, spacing: 12) {
-                UseCaseRow(title: "Lock a home key", detail: "Pin a slice to keep the panel stable while you compare functions.")
-                UseCaseRow(title: "Move with intention", detail: "Clockwise adds pull. Counter-clockwise opens things up.")
-                UseCaseRow(title: "Stay musical", detail: "The app surfaces the practical theory first, not everything at once.")
-            }
-
-            Spacer(minLength: 0)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-    }
-
     private func heroSection(activeSlice: CircleSlice, activeFocus: SegmentFocus) -> some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 18) {
             HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(activeSlice.label(for: activeFocus.ring))
-                        .font(.system(size: 38, weight: .heavy, design: .rounded))
-                        .foregroundStyle(.white)
-                        .matchedGeometryEffect(id: "hero-title", in: selectionNamespace)
+                Text(activeSlice.label(for: activeFocus.ring))
+                    .font(.system(size: 42, weight: .black, design: .serif))
+                    .foregroundStyle(.white)
+                    .matchedGeometryEffect(id: "hero-title", in: selectionNamespace)
 
-                    Text(activeFocus.ring.title.uppercased())
-                        .font(.system(size: 11, weight: .black, design: .rounded))
-                        .foregroundStyle(.white.opacity(0.5))
-                        .tracking(1.8)
-                }
-
-                Spacer(minLength: 16)
+                Spacer(minLength: 20)
 
                 StatusPill(
                     title: "Signature",
@@ -514,10 +501,6 @@ private struct DetailPanelView: View {
                     emphasis: theme.highlightColor
                 )
             }
-
-            Text(activeFocus.ring.subtitle)
-                .font(.system(size: 14, weight: .medium, design: .rounded))
-                .foregroundStyle(.white.opacity(0.66))
 
             HStack(spacing: 10) {
                 ForEach(RingKind.allCases) { ring in
@@ -541,7 +524,11 @@ private struct DetailPanelView: View {
         VStack(alignment: .leading, spacing: 14) {
             SectionHeader(title: "At a glance", accent: theme.highlightColor)
 
-            HStack(spacing: 10) {
+            LazyVGrid(
+                columns: [GridItem(.adaptive(minimum: 94, maximum: 140), spacing: 10, alignment: .leading)],
+                alignment: .leading,
+                spacing: 10
+            ) {
                 MetaChip(title: "Major", value: activeSlice.majorLabel)
                 MetaChip(title: "Minor", value: activeSlice.minorLabel)
                 MetaChip(title: "Dim", value: activeSlice.diminishedLabel)
@@ -549,7 +536,7 @@ private struct DetailPanelView: View {
 
             VStack(alignment: .leading, spacing: 10) {
                 Text(scaleSectionTitle(for: activeFocus.ring))
-                    .font(.system(size: 11, weight: .black, design: .rounded))
+                    .font(.system(size: 10, weight: .black, design: .monospaced))
                     .foregroundStyle(.white.opacity(0.46))
                     .tracking(1.2)
                     .textCase(.uppercase)
@@ -562,6 +549,7 @@ private struct DetailPanelView: View {
                 notes: activeSlice.chordNotes(for: activeFocus.ring),
                 accent: theme.highlightColor
             )
+            .padding(.top, 4)
         }
         .sectionCardStyle()
     }
@@ -608,7 +596,7 @@ private struct DetailPanelView: View {
                 accent: theme.highlightColor
             ) {
                 withAnimation(panelAnimation) {
-                    model.select(SegmentFocus(index: previousIndex, ring: activeFocus.ring))
+                    model.selectFromInspector(SegmentFocus(index: previousIndex, ring: activeFocus.ring))
                 }
             }
 
@@ -621,7 +609,7 @@ private struct DetailPanelView: View {
                 accent: theme.accentGlowColor
             ) {
                 withAnimation(panelAnimation) {
-                    model.select(SegmentFocus(index: nextIndex, ring: activeFocus.ring))
+                    model.selectFromInspector(SegmentFocus(index: nextIndex, ring: activeFocus.ring))
                 }
             }
         }
@@ -801,23 +789,27 @@ private struct PanelMetrics {
         min(34, max(22, size.width * 0.026))
     }
 
-    var columnSpacing: CGFloat {
-        min(28, max(18, size.width * 0.022))
+    var contentSpacing: CGFloat {
+        min(28, max(20, size.width * 0.02))
     }
 
     var cardPadding: CGFloat {
         min(28, max(20, size.width * 0.02))
     }
 
-    var detailWidth: CGFloat {
-        min(430, max(360, size.width * 0.31))
+    var compactInspectorHeight: CGFloat {
+        94
+    }
+
+    var expandedInspectorHeight: CGFloat {
+        min(340, max(260, size.height * 0.34))
     }
 
     var wheelFrameSize: CGFloat {
-        let availableWidth = size.width - (outerPadding * 2) - detailWidth - columnSpacing - (cardPadding * 2)
-        let reservedHeight = max(280, size.height * 0.34)
+        let availableWidth = size.width - (outerPadding * 2) - (cardPadding * 2)
+        let reservedHeight = compactInspectorHeight + max(124, size.height * 0.14)
         let availableHeight = size.height - (outerPadding * 2) - reservedHeight
-        return max(360, min(availableWidth, availableHeight, 540))
+        return max(340, min(availableWidth, availableHeight, 600))
     }
 }
 
@@ -879,38 +871,6 @@ private struct ShortcutBadge: View {
     }
 }
 
-private struct RevealStateBadge: View {
-    let title: String
-    let detail: String
-    let theme: PanelTheme
-
-    var body: some View {
-        HStack(spacing: 10) {
-            Circle()
-                .fill(theme.highlightColor.opacity(0.9))
-                .frame(width: 8, height: 8)
-
-            VStack(alignment: .leading, spacing: 3) {
-                Text(title.uppercased())
-                    .font(.system(size: 10, weight: .black, design: .rounded))
-                    .foregroundStyle(.white.opacity(0.46))
-                    .tracking(1.2)
-
-                Text(detail)
-                    .font(.system(size: 13, weight: .bold, design: .rounded))
-                    .foregroundStyle(.white)
-            }
-        }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 10)
-        .background(.black.opacity(0.18), in: .rect(cornerRadius: 18))
-        .overlay {
-            RoundedRectangle(cornerRadius: 18)
-                .stroke(.white.opacity(0.08), lineWidth: 1)
-        }
-    }
-}
-
 private struct StatusPill: View {
     let title: String
     let value: String
@@ -933,6 +893,32 @@ private struct StatusPill: View {
         .overlay {
             Capsule()
                 .stroke(emphasis.opacity(0.24), lineWidth: 1)
+        }
+    }
+}
+
+private struct DirectionChip: View {
+    let title: String
+    let value: String
+    let accent: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title)
+                .font(.system(size: 9, weight: .black, design: .monospaced))
+                .foregroundStyle(.white.opacity(0.40))
+                .tracking(1.2)
+
+            Text(value)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(.white)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .background(accent.opacity(0.10), in: .rect(cornerRadius: 16))
+        .overlay {
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(accent.opacity(0.20), lineWidth: 1)
         }
     }
 }
@@ -1004,7 +990,7 @@ private struct MetaChip: View {
                 .font(.system(size: 16, weight: .bold, design: .rounded))
                 .foregroundStyle(.white)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, minHeight: 56, alignment: .leading)
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
         .background(.black.opacity(0.16), in: .rect(cornerRadius: 18))
@@ -1020,7 +1006,7 @@ private struct ChipGrid: View {
     let highlight: Color
 
     private let columns = [
-        GridItem(.adaptive(minimum: 68, maximum: 120), spacing: 8, alignment: .leading)
+        GridItem(.adaptive(minimum: 72, maximum: 110), spacing: 8, alignment: .leading)
     ]
 
     var body: some View {
@@ -1029,7 +1015,7 @@ private struct ChipGrid: View {
                 Text(item)
                     .font(.system(size: 13, weight: .bold, design: .rounded))
                     .foregroundStyle(.white.opacity(0.9))
-                    .frame(maxWidth: .infinity)
+                    .frame(maxWidth: .infinity, minHeight: 18)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 9)
                     .background(highlight.opacity(0.10), in: Capsule())
@@ -1039,6 +1025,7 @@ private struct ChipGrid: View {
                     }
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
@@ -1057,6 +1044,7 @@ private struct ChordBlock: View {
                 Text(notes.joined(separator: "  "))
                     .font(.system(size: 13, weight: .semibold, design: .rounded))
                     .foregroundStyle(.white.opacity(0.68))
+                    .fixedSize(horizontal: false, vertical: true)
             }
 
             Spacer(minLength: 12)
@@ -1065,6 +1053,7 @@ private struct ChordBlock: View {
                 .fill(accent.opacity(0.85))
                 .frame(width: 10, height: 10)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(16)
         .background(.black.opacity(0.18), in: .rect(cornerRadius: 22))
         .overlay {
@@ -1208,85 +1197,38 @@ private struct SharedMaterialRow: View {
     }
 }
 
-private struct UseCaseRow: View {
-    let title: String
-    let detail: String
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(title)
-                .font(.system(size: 16, weight: .bold, design: .rounded))
-                .foregroundStyle(.white)
-
-            Text(detail)
-                .font(.system(size: 13, weight: .medium, design: .rounded))
-                .foregroundStyle(.white.opacity(0.64))
-        }
-        .padding(16)
-        .background(.black.opacity(0.18), in: .rect(cornerRadius: 22))
-        .overlay {
-            RoundedRectangle(cornerRadius: 22)
-                .stroke(.white.opacity(0.06), lineWidth: 1)
-        }
-    }
-}
-
-private struct LinearMeter: View {
-    let theme: PanelTheme
-
-    var body: some View {
-        HStack(spacing: 6) {
-            ForEach(0..<12, id: \.self) { index in
-                RoundedRectangle(cornerRadius: 3)
-                    .fill(index < 8 ? theme.highlightColor.opacity(0.9 - Double(index) * 0.08) : .white.opacity(0.08))
-                    .frame(height: index % 3 == 0 ? 10 : 6)
-            }
-        }
-        .frame(maxWidth: 220)
-    }
-}
-
 private struct GlassCard: ViewModifier {
     let cornerRadius: CGFloat
     let tint: Color
 
     func body(content: Content) -> some View {
-        #if compiler(>=6.2)
-        if #available(macOS 26.0, *) {
-            content
-                .background(tint, in: .rect(cornerRadius: cornerRadius))
-                .glassEffect(.regular, in: .rect(cornerRadius: cornerRadius))
-        } else {
-            legacyBody(for: content)
-        }
-        #else
         legacyBody(for: content)
-        #endif
     }
 
     private func legacyBody(for content: Content) -> some View {
         content
-            .background(.ultraThinMaterial, in: .rect(cornerRadius: cornerRadius))
+            .background(tint, in: .rect(cornerRadius: cornerRadius))
             .overlay {
                 RoundedRectangle(cornerRadius: cornerRadius)
-                    .stroke(.white.opacity(0.08), lineWidth: 1)
+                    .stroke(.white.opacity(0.06), lineWidth: 1)
             }
     }
 }
 
 private struct PressableCapsuleButtonStyle: ButtonStyle {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    var highlight: Color? = nil
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.system(size: 12, weight: .bold, design: .rounded))
+            .font(.system(size: 12, weight: .bold))
             .foregroundStyle(.white.opacity(0.84))
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
-            .background(.black.opacity(0.18), in: Capsule())
+            .background((highlight ?? .white).opacity(highlight == nil ? 0.06 : 0.15), in: Capsule())
             .overlay {
                 Capsule()
-                    .stroke(.white.opacity(0.08), lineWidth: 1)
+                    .stroke((highlight ?? .white).opacity(highlight == nil ? 0.08 : 0.22), lineWidth: 1)
             }
             .scaleEffect(configuration.isPressed ? 0.97 : 1)
             .animation(reduceMotion ? .easeOut(duration: 0.08) : .easeOut(duration: 0.16), value: configuration.isPressed)
@@ -1307,11 +1249,20 @@ private struct PressableCardButtonStyle: ButtonStyle {
 private extension View {
     func sectionCardStyle() -> some View {
         padding(18)
-            .background(.white.opacity(0.035), in: .rect(cornerRadius: 26))
+            .background(.white.opacity(0.028), in: .rect(cornerRadius: 26))
             .overlay {
                 RoundedRectangle(cornerRadius: 26)
-                    .stroke(.white.opacity(0.05), lineWidth: 1)
+                    .stroke(.white.opacity(0.045), lineWidth: 1)
             }
+    }
+
+    func panelShellStyle(cornerRadius: CGFloat) -> some View {
+        background(.black.opacity(0.14), in: .rect(cornerRadius: cornerRadius))
+            .overlay {
+                RoundedRectangle(cornerRadius: cornerRadius)
+                    .stroke(.white.opacity(0.06), lineWidth: 1)
+            }
+            .shadow(color: .black.opacity(0.22), radius: 22, y: 12)
     }
 
     func panelCardStyle(cornerRadius: CGFloat, tint: Color) -> some View {

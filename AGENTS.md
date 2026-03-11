@@ -9,3 +9,11 @@
   inspect recent logs with `/usr/bin/log show --last 5m --predicate 'process == "Tonica"' --style compact`
   rebuild with `xcodegen generate` then `xcodebuild -project Tonica.xcodeproj -scheme Tonica -configuration Debug -derivedDataPath .build clean build`
   relaunch with `open -n /Users/argo/Projects/Playground/Tonica/.build/Build/Products/Debug/Tonica.app`
+- Stable release workflow:
+  preview with `./scripts/ship_stable.sh --dry-run`
+  ship a version bump with `./scripts/ship_stable.sh patch|minor|major`
+  build a candidate only with `./scripts/ship_stable.sh candidate --ref <git-ref>`
+  republish an existing stable release with `./scripts/ship_stable.sh republish --tag vX.Y.Z --version X.Y.Z`
+- Never assume `git push origin main` publishes stable. Tonica stable shipping is candidate-first: candidate workflow first, then stable publish from that candidate artifact.
+- Tonica release versioning lives in `project.yml`. After changing `MARKETING_VERSION` or `CURRENT_PROJECT_VERSION`, run `xcodegen generate` and commit the generated project update with the version bump.
+- Tonica uses a monotonic build number. Do not invent a semver-derived build formula, and do not bump the version a second time just to recover a bad release. Use `republish` instead.

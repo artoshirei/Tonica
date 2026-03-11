@@ -4,7 +4,7 @@ import SwiftUI
 
 @MainActor
 final class FloatingPanelController: NSWindowController, NSWindowDelegate {
-    private static let defaultWindowSize = NSSize(width: 1260, height: 900)
+    private static let defaultWindowSize = NSSize(width: 860, height: 760)
     private static let revealAnimationDuration: TimeInterval = 0.08
     private static let hideAnimationDuration: TimeInterval = 0.06
 

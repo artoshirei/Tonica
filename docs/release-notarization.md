@@ -39,18 +39,50 @@ The release flow:
 - `SPARKLE_PRIVATE_ED_KEY`
   Exported private Sparkle EdDSA key text from `generate_keys -x`.
 
-## Release Workflow
+## Preferred Human Workflow
 
-1. Bump `MARKETING_VERSION` and `CURRENT_PROJECT_VERSION` in `project.yml`.
-2. Run `xcodegen generate` and commit the generated project changes.
-3. Push the commit.
-4. Tag the release commit as `v<version>`.
-5. Push the tag.
+Use the repo wrapper instead of replaying the workflow by hand:
 
-GitHub Actions will build, notarize, package, and publish `Tonica.dmg`.
-It will also regenerate and publish `docs/appcast.xml` for Sparkle.
+```bash
+cd /Users/argo/Projects/Playground/Tonica
 
-`workflow_dispatch` stays available as a manual republish path from `main`.
+./scripts/ship_stable.sh --dry-run
+./scripts/ship_stable.sh patch
+```
+
+Other release modes:
+
+- `./scripts/ship_stable.sh minor`
+- `./scripts/ship_stable.sh major`
+- `./scripts/ship_stable.sh candidate --ref <git-ref>`
+- `./scripts/ship_stable.sh republish --tag vX.Y.Z --version X.Y.Z`
+
+What the wrapper does for `patch|minor|major`:
+
+1. Fails fast on a dirty tree.
+2. Reads the current version/build from `project.yml`.
+3. Bumps `MARKETING_VERSION` and increments the monotonic `CURRENT_PROJECT_VERSION` by exactly `1`.
+4. Runs `xcodegen generate`.
+5. Commits `project.yml` plus the generated project change together.
+6. Pushes the release commit.
+7. Dispatches `.github/workflows/build-candidate.yml` with the exact commit/version/tag.
+8. Waits for candidate success.
+9. Pushes tag `v<version>`.
+10. Lets `.github/workflows/release.yml` publish stable from that candidate artifact.
+11. Verifies the GitHub Release DMG, latest-download DMG URL, and raw GitHub appcast URL.
+
+Recovery rules:
+
+- Never assume `push main` publishes stable.
+- Never bump the version twice to recover a bad release.
+- Use `republish --tag vX.Y.Z --version X.Y.Z` for same-version recovery.
+- `republish` does not create a new tag and does not bump the version.
+
+`--no-wait` stays conservative:
+
+- for `candidate`, it skips waiting for candidate completion
+- for `republish`, it skips waiting for stable publish completion
+- for `patch|minor|major`, it still waits for candidate success before tagging, then skips only the final stable publish wait
 
 ## Local Signed Build
 
