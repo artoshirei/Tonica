@@ -12,9 +12,11 @@
 		3AA9D0779BB9FF13E2F5E1D5 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = DD8AA48955D5A4574F2B1403 /* Sparkle */; };
 		450BA9318EFAB475DE1A10E6 /* TonicaApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85E0B04A6264E8550475EECA /* TonicaApp.swift */; };
 		54D945C79C2F1E03728F4E30 /* AppPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF862060BFD4935397091DE7 /* AppPreferences.swift */; };
+		5D381B2D6E37453677E8B808 /* NotePlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1484A32C35B672AF3E6E16C5 /* NotePlayer.swift */; };
 		5DFBACCC435383326B9A2F49 /* Tonica.icon in Resources */ = {isa = PBXBuildFile; fileRef = B3B61932826FD069BC43D840 /* Tonica.icon */; };
+		68BE872B37E171DFDC712BF9 /* CircleWheelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D02A40063214A3A6B1832AA8 /* CircleWheelView.swift */; };
 		76C99B30A0E66B5F855B840B /* CircleData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03BB220F39F3CB634D0D613C /* CircleData.swift */; };
-		7918938F5C418CEF442FFF2E /* CirclePanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77F13E184CBFB016D214BC68 /* CirclePanelView.swift */; };
+		85BA7258BCB4CD0C811E2E70 /* InstrumentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E87814D2A304A1783899666 /* InstrumentView.swift */; };
 		A05C419D779F39798D8D7B4E /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = 1195CE35BFBCEA6CF7E40D34 /* KeyboardShortcuts */; };
 		A38F0D5592C8E8F4005E041B /* AppLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEB043E7BDD21ACB74FE342D /* AppLogger.swift */; };
 		A80ECB2E8D9A39F6D0FAE3B8 /* StatusBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A06FF5E8E5466AA776C90376 /* StatusBarController.swift */; };
@@ -22,9 +24,9 @@
 		BC51DA27BD823FC471488424 /* AppUpdaterController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F533F363748A5676656301A7 /* AppUpdaterController.swift */; };
 		C37FBFF524B17BE4160DA362 /* AppController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F24F0BC28FE94F3E391A859B /* AppController.swift */; };
 		C6D29B6A42BAA41959F65158 /* AppMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = 118E71F2DFD7C6B9B4E4F840 /* AppMetadata.swift */; };
-		CA96A8C6BA4BC65D68A138BE /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48642E2601974A19B5FFFE59 /* SettingsView.swift */; };
-		D4A516F445DF387F09033590 /* BrandMark.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE740C29F69E3A1340AF8179 /* BrandMark.swift */; };
+		CBF4179371E0A94B359FA3E2 /* HarmonyViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A579423A85D643A0388F1ADB /* HarmonyViewController.swift */; };
 		D4E12CA735614D4DD29DECB9 /* PanelHotKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8B8B434711B3F56DDEEF885 /* PanelHotKey.swift */; };
+		DD73239228527F80F41CC752 /* AppKitComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FAE20F344494AAB81256B82 /* AppKitComponents.swift */; };
 		E19C6D2047E0EE99A2684F97 /* SettingsWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 491BAF242F2E487FF052F882 /* SettingsWindowController.swift */; };
 		FDFFBF65D0918EEAEF849D02 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23C3541C5A6CD6CDA34D6670 /* AppModel.swift */; };
 /* End PBXBuildFile section */
@@ -32,18 +34,20 @@
 /* Begin PBXFileReference section */
 		03BB220F39F3CB634D0D613C /* CircleData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CircleData.swift; sourceTree = "<group>"; };
 		118E71F2DFD7C6B9B4E4F840 /* AppMetadata.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppMetadata.swift; sourceTree = "<group>"; };
+		1484A32C35B672AF3E6E16C5 /* NotePlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotePlayer.swift; sourceTree = "<group>"; };
 		23C3541C5A6CD6CDA34D6670 /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
 		29A12BD4FD62BA193A5D99A2 /* Tonica.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Tonica.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		404D761711589B2C3756D9AD /* FloatingPanelController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloatingPanelController.swift; sourceTree = "<group>"; };
-		48642E2601974A19B5FFFE59 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		491BAF242F2E487FF052F882 /* SettingsWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsWindowController.swift; sourceTree = "<group>"; };
+		6E87814D2A304A1783899666 /* InstrumentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstrumentView.swift; sourceTree = "<group>"; };
 		73E6388C098C965DAE109334 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
-		77F13E184CBFB016D214BC68 /* CirclePanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CirclePanelView.swift; sourceTree = "<group>"; };
+		7FAE20F344494AAB81256B82 /* AppKitComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppKitComponents.swift; sourceTree = "<group>"; };
 		85E0B04A6264E8550475EECA /* TonicaApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TonicaApp.swift; sourceTree = "<group>"; };
 		A06FF5E8E5466AA776C90376 /* StatusBarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBarController.swift; sourceTree = "<group>"; };
-		B3B61932826FD069BC43D840 /* Tonica.icon */ = {isa = PBXFileReference; path = Tonica.icon; sourceTree = "<group>"; };
-		CE740C29F69E3A1340AF8179 /* BrandMark.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrandMark.swift; sourceTree = "<group>"; };
+		A579423A85D643A0388F1ADB /* HarmonyViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HarmonyViewController.swift; sourceTree = "<group>"; };
+		B3B61932826FD069BC43D840 /* Tonica.icon */ = {isa = PBXFileReference; lastKnownFileType = wrapper.icon; path = Tonica.icon; sourceTree = "<group>"; };
 		CF862060BFD4935397091DE7 /* AppPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppPreferences.swift; sourceTree = "<group>"; };
+		D02A40063214A3A6B1832AA8 /* CircleWheelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CircleWheelView.swift; sourceTree = "<group>"; };
 		D8B8B434711B3F56DDEEF885 /* PanelHotKey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PanelHotKey.swift; sourceTree = "<group>"; };
 		DEB043E7BDD21ACB74FE342D /* AppLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLogger.swift; sourceTree = "<group>"; };
 		E517F9900FC591780B5B00AA /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -67,9 +71,10 @@
 		22022685C9F3B297256E5BC8 /* Views */ = {
 			isa = PBXGroup;
 			children = (
-				CE740C29F69E3A1340AF8179 /* BrandMark.swift */,
-				77F13E184CBFB016D214BC68 /* CirclePanelView.swift */,
-				48642E2601974A19B5FFFE59 /* SettingsView.swift */,
+				7FAE20F344494AAB81256B82 /* AppKitComponents.swift */,
+				D02A40063214A3A6B1832AA8 /* CircleWheelView.swift */,
+				A579423A85D643A0388F1ADB /* HarmonyViewController.swift */,
+				6E87814D2A304A1783899666 /* InstrumentView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -112,6 +117,7 @@
 				F533F363748A5676656301A7 /* AppUpdaterController.swift */,
 				03BB220F39F3CB634D0D613C /* CircleData.swift */,
 				404D761711589B2C3756D9AD /* FloatingPanelController.swift */,
+				1484A32C35B672AF3E6E16C5 /* NotePlayer.swift */,
 				D8B8B434711B3F56DDEEF885 /* PanelHotKey.swift */,
 				491BAF242F2E487FF052F882 /* SettingsWindowController.swift */,
 				A06FF5E8E5466AA776C90376 /* StatusBarController.swift */,
@@ -160,7 +166,6 @@
 				};
 			};
 			buildConfigurationList = 0AB7A1C5C9A1AD692AD4B39B /* Build configuration list for PBXProject "Tonica" */;
-			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -174,6 +179,7 @@
 				417B468FFAC12517F253A63C /* XCRemoteSwiftPackageReference "Sparkle" */,
 			);
 			preferredProjectObjectVersion = 77;
+			productRefGroup = 2E7201433703B2AC4F9983BF /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
@@ -201,17 +207,19 @@
 			files = (
 				C37FBFF524B17BE4160DA362 /* AppController.swift in Sources */,
 				1D935033C57E8C439F2433A1 /* AppDelegate.swift in Sources */,
+				DD73239228527F80F41CC752 /* AppKitComponents.swift in Sources */,
 				A38F0D5592C8E8F4005E041B /* AppLogger.swift in Sources */,
 				C6D29B6A42BAA41959F65158 /* AppMetadata.swift in Sources */,
 				FDFFBF65D0918EEAEF849D02 /* AppModel.swift in Sources */,
 				54D945C79C2F1E03728F4E30 /* AppPreferences.swift in Sources */,
 				BC51DA27BD823FC471488424 /* AppUpdaterController.swift in Sources */,
-				D4A516F445DF387F09033590 /* BrandMark.swift in Sources */,
 				76C99B30A0E66B5F855B840B /* CircleData.swift in Sources */,
-				7918938F5C418CEF442FFF2E /* CirclePanelView.swift in Sources */,
+				68BE872B37E171DFDC712BF9 /* CircleWheelView.swift in Sources */,
 				AA180D00C881D653679D9F4B /* FloatingPanelController.swift in Sources */,
+				CBF4179371E0A94B359FA3E2 /* HarmonyViewController.swift in Sources */,
+				85BA7258BCB4CD0C811E2E70 /* InstrumentView.swift in Sources */,
+				5D381B2D6E37453677E8B808 /* NotePlayer.swift in Sources */,
 				D4E12CA735614D4DD29DECB9 /* PanelHotKey.swift in Sources */,
-				CA96A8C6BA4BC65D68A138BE /* SettingsView.swift in Sources */,
 				E19C6D2047E0EE99A2684F97 /* SettingsWindowController.swift in Sources */,
 				A80ECB2E8D9A39F6D0FAE3B8 /* StatusBarController.swift in Sources */,
 				450BA9318EFAB475DE1A10E6 /* TonicaApp.swift in Sources */,

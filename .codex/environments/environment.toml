@@ -1,0 +1,8 @@
+version = 1
+name = "Tonica"
+[setup]
+script = ""
+[[actions]]
+name = "Run Preview"
+icon = "run"
+command = "./script/build_and_run.sh --verify"

@@ -1,213 +1,55 @@
 import AppKit
-import QuartzCore
-import SwiftUI
 
 @MainActor
 final class FloatingPanelController: NSWindowController, NSWindowDelegate {
-    private static let defaultWindowSize = NSSize(width: 860, height: 760)
-    private static let revealAnimationDuration: TimeInterval = 0.08
-    private static let hideAnimationDuration: TimeInterval = 0.06
-
     private let model: AppModel
-    private var isAnimatingDismissal = false
-
+    private var restoringFrame = false
     init(model: AppModel) {
         self.model = model
-
-        let window = FloatingWindow(
-            contentRect: NSRect(origin: .zero, size: Self.defaultWindowSize),
-            styleMask: [.titled, .closable, .fullSizeContentView],
-            backing: .buffered,
-            defer: false
-        )
-
-        window.titleVisibility = .hidden
-        window.titlebarAppearsTransparent = true
-        window.level = .floating
-        window.isMovableByWindowBackground = false
-        window.collectionBehavior = [.fullScreenAuxiliary, .moveToActiveSpace]
-        window.backgroundColor = .clear
-        window.isOpaque = false
+        let window = HarmonyWindow(contentRect: NSRect(x: 0, y: 0, width: 1000, height: 740), styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered, defer: false)
+        window.title = AppRuntime.isPreview ? "Tonica Preview · AppKit" : "Tonica"
         window.isReleasedWhenClosed = false
-        window.animationBehavior = .none
-        window.standardWindowButton(.zoomButton)?.isHidden = true
-        window.standardWindowButton(.miniaturizeButton)?.isHidden = true
-
-        let host = NSHostingController(rootView: CirclePanelView(model: model))
-        host.sizingOptions = []
-        host.preferredContentSize = Self.defaultWindowSize
-        window.contentViewController = host
-        window.setContentSize(Self.defaultWindowSize)
-        window.setFrame(NSRect(origin: .zero, size: Self.defaultWindowSize), display: false)
-
+        window.backgroundColor = TonicaAppearance.background
+        window.titlebarAppearsTransparent = true
+        window.contentMinSize = NSSize(width: 940, height: 660)
+        window.collectionBehavior = [.fullScreenAuxiliary, .moveToActiveSpace]
+        window.contentViewController = HarmonyViewController(model: model)
+        window.initialFirstResponder = window.contentView
         super.init(window: window)
-
         window.delegate = self
+        NotificationCenter.default.addObserver(self, selector: #selector(updateWindowLevel), name: .tonicaModelChanged, object: model)
+        updateWindowLevel()
     }
-
-    @available(*, unavailable)
-    required init?(coder: NSCoder) {
-        nil
-    }
-
+    required init?(coder: NSCoder) { fatalError() }
     func present() {
-        guard let window else {
-            AppLogger.panel.error("Panel presentation skipped because the window controller has no window")
-            return
-        }
-
-        isAnimatingDismissal = false
-        prepareFrame(for: window)
-        window.alphaValue = 0
-        showWindow(nil)
-        window.orderFrontRegardless()
-        window.makeMain()
-        window.makeKeyAndOrderFront(nil)
-        NSRunningApplication.current.activate(options: [.activateAllWindows])
-        NSApp.activate(ignoringOtherApps: true)
-        animate(window: window, toAlpha: 1, duration: Self.revealAnimationDuration)
-        AppLogger.panel.debug("Presented panel at x=\(Int(window.frame.origin.x), privacy: .public) y=\(Int(window.frame.origin.y), privacy: .public) w=\(Int(window.frame.width), privacy: .public) h=\(Int(window.frame.height), privacy: .public)")
-    }
-
-    func dismiss() {
-        AppLogger.panel.debug("Dismissing panel window")
         guard let window else { return }
-
-        rememberFrame(from: window)
-        isAnimatingDismissal = true
-        animate(window: window, toAlpha: 0, duration: Self.hideAnimationDuration) { [weak self] in
-            guard let self else { return }
-            window.orderOut(nil)
-            window.alphaValue = 1
-            self.isAnimatingDismissal = false
-        }
-    }
-
-    func windowWillClose(_ notification: Notification) {
-        AppController.shared.panelDidClose()
-    }
-
-    func windowDidMove(_ notification: Notification) {
-        guard !isAnimatingDismissal, let window else { return }
-        rememberFrame(from: window)
-    }
-
-    private func prepareFrame(for window: NSWindow) {
-        if let rememberedFrame = AppPreferences.loadPanelFrame() {
-            let targetFrame = constrainedFrame(for: rememberedFrame)
-            window.setContentSize(targetFrame.size)
-            window.setFrame(targetFrame, display: false)
-            return
-        }
-
-        let targetScreen = primaryScreen() ?? NSScreen.main ?? NSScreen.screens.first
-
-        guard let targetScreen else {
-            let defaultFrame = NSRect(origin: .zero, size: Self.defaultWindowSize)
-            window.setFrame(defaultFrame, display: false)
-            window.center()
-            rememberFrame(from: window)
-            return
-        }
-
-        let targetFrame = fittedFrame(for: targetScreen)
-        window.setContentSize(targetFrame.size)
-        window.setFrame(targetFrame, display: false)
-        rememberFrame(from: window)
-    }
-
-    private func primaryScreen() -> NSScreen? {
-        NSScreen.screens.first { screen in
-            guard let number = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber else {
-                return false
+        if !window.isVisible {
+            restoringFrame = true
+            let desired = AppPreferences.loadPanelFrame() ?? window.frame
+            let screen = NSScreen.screens.max { $0.visibleFrame.intersection(desired).size.area < $1.visibleFrame.intersection(desired).size.area } ?? NSScreen.main
+            if let screen {
+                let visible = screen.visibleFrame
+                let size = NSSize(width: min(max(940, desired.width), visible.width), height: min(max(688, desired.height), visible.height))
+                let origin = AppPreferences.loadPanelFrame() == nil ? NSPoint(x: visible.midX - size.width / 2, y: visible.midY - size.height / 2) : NSPoint(x: min(max(desired.minX, visible.minX), visible.maxX - size.width), y: min(max(desired.minY, visible.minY), visible.maxY - size.height))
+                window.setFrame(NSRect(origin: origin, size: size), display: false)
             }
-
-            return CGDisplayIsMain(number.uint32Value) != 0
+            restoringFrame = false
         }
+        if window.isMiniaturized { window.deminiaturize(nil) }
+        showWindow(nil)
+        window.makeKeyAndOrderFront(nil)
+        window.makeFirstResponder(window.contentView)
+        NSApp.activate(ignoringOtherApps: true)
     }
-
-    private func fittedFrame(for screen: NSScreen) -> NSRect {
-        let visible = screen.visibleFrame
-        let inset: CGFloat = 40
-        let availableWidth = max(visible.width - inset * 2, 480)
-        let availableHeight = max(visible.height - inset * 2, 360)
-        let scale = min(
-            1,
-            availableWidth / Self.defaultWindowSize.width,
-            availableHeight / Self.defaultWindowSize.height
-        )
-        let size = NSSize(
-            width: floor(Self.defaultWindowSize.width * scale),
-            height: floor(Self.defaultWindowSize.height * scale)
-        )
-        let origin = CGPoint(
-            x: round(visible.midX - size.width / 2),
-            y: round(visible.midY - size.height / 2)
-        )
-
-        return NSRect(origin: origin, size: size)
-    }
-
-    private func constrainedFrame(for frame: NSRect) -> NSRect {
-        let targetScreen = screen(containing: frame) ?? primaryScreen() ?? NSScreen.main ?? NSScreen.screens.first
-
-        guard let targetScreen else { return frame }
-
-        let visible = targetScreen.visibleFrame
-        let size = NSSize(
-            width: min(frame.width, visible.width),
-            height: min(frame.height, visible.height)
-        )
-        let maxX = visible.maxX - size.width
-        let maxY = visible.maxY - size.height
-        let origin = CGPoint(
-            x: min(max(frame.origin.x, visible.minX), maxX),
-            y: min(max(frame.origin.y, visible.minY), maxY)
-        )
-
-        return NSRect(origin: origin, size: size)
-    }
-
-    private func screen(containing frame: NSRect) -> NSScreen? {
-        let frameCenter = CGPoint(x: frame.midX, y: frame.midY)
-
-        if let exact = NSScreen.screens.first(where: { $0.visibleFrame.contains(frameCenter) }) {
-            return exact
-        }
-
-        return NSScreen.screens.max { lhs, rhs in
-            lhs.visibleFrame.intersection(frame).area < rhs.visibleFrame.intersection(frame).area
-        }
-    }
-
-    private func rememberFrame(from window: NSWindow) {
-        AppPreferences.savePanelFrame(window.frame)
-    }
-
-    private func animate(
-        window: NSWindow,
-        toAlpha alpha: CGFloat,
-        duration: TimeInterval,
-        completion: (() -> Void)? = nil
-    ) {
-        NSAnimationContext.runAnimationGroup { context in
-            context.duration = duration
-            context.timingFunction = CAMediaTimingFunction(name: .easeOut)
-            context.allowsImplicitAnimation = true
-            window.animator().alphaValue = alpha
-        } completionHandler: {
-            completion?()
-        }
-    }
+    func dismiss() { remember(); window?.orderOut(nil) }
+    func windowWillClose(_ notification: Notification) { remember(); AppController.shared.panelDidClose() }
+    func windowDidMove(_ notification: Notification) { remember() }
+    func windowDidResize(_ notification: Notification) { remember() }
+    private func remember() { if !restoringFrame, let window { AppPreferences.savePanelFrame(window.frame) } }
+    @objc private func updateWindowLevel() { window?.level = model.keepOnTop ? .floating : .normal }
 }
 
-private final class FloatingWindow: NSWindow {
-    override var canBecomeKey: Bool { true }
-    override var canBecomeMain: Bool { true }
+private final class HarmonyWindow: NSWindow {
+    override func cancelOperation(_ sender: Any?) { AppController.shared.hidePanel() }
 }
-
-private extension CGRect {
-    var area: CGFloat {
-        width * height
-    }
-}
+private extension NSSize { var area: CGFloat { max(0, width) * max(0, height) } }

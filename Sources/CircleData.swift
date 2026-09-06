@@ -1,4 +1,4 @@
-import SwiftUI
+import AppKit
 
 struct ProgressionRecipe: Identifiable, Hashable {
     let id: String
@@ -7,34 +7,12 @@ struct ProgressionRecipe: Identifiable, Hashable {
     let chords: [String]
 }
 
-enum RingKind: String, CaseIterable, Identifiable {
+enum RingKind: String {
     case major
     case minor
     case diminished
 
-    var id: String { rawValue }
 
-    var title: String {
-        switch self {
-        case .major:
-            return "Major Key"
-        case .minor:
-            return "Relative Minor"
-        case .diminished:
-            return "Leading Diminished"
-        }
-    }
-
-    var subtitle: String {
-        switch self {
-        case .major:
-            return "The home key on this slice."
-        case .minor:
-            return "The inside minor that shares the same signature."
-        case .diminished:
-            return "The tension chord built from the seventh scale degree."
-        }
-    }
 }
 
 struct SegmentFocus: Equatable {
@@ -42,14 +20,13 @@ struct SegmentFocus: Equatable {
     let ring: RingKind
 }
 
-struct CircleSlice: Identifiable, Hashable {
-    let id = UUID()
+struct CircleSlice {
     let majorLabel: String
     let minorLabel: String
     let diminishedLabel: String
     let signature: String
     let scaleNotes: [String]
-    let palette: Color
+    let palette: NSColor
 
     var diatonicTriads: [String] {
         [
@@ -67,16 +44,8 @@ struct CircleSlice: Identifiable, Hashable {
         ["I", "ii", "iii", "IV", "V", "vi", "vii°"]
     }
 
-    var majorTriadNotes: [String] {
-        [scaleNotes[0], scaleNotes[2], scaleNotes[4]]
-    }
-
     var minorScaleNotes: [String] {
         [scaleNotes[5], scaleNotes[6], scaleNotes[0], scaleNotes[1], scaleNotes[2], scaleNotes[3], scaleNotes[4]]
-    }
-
-    var minorTriadNotes: [String] {
-        [minorScaleNotes[0], minorScaleNotes[2], minorScaleNotes[4]]
     }
 
     var minorDiatonicTriads: [String] {
@@ -93,14 +62,6 @@ struct CircleSlice: Identifiable, Hashable {
 
     var minorRomanNumerals: [String] {
         ["i", "ii°", "III", "iv", "v", "VI", "VII"]
-    }
-
-    var diminishedTriadNotes: [String] {
-        [scaleNotes[6], scaleNotes[1], scaleNotes[3]]
-    }
-
-    var cadence: [String] {
-        [minorChord(for: 1), scaleNotes[4], majorLabel]
     }
 
     var majorProgressions: [ProgressionRecipe] {
@@ -142,17 +103,6 @@ struct CircleSlice: Identifiable, Hashable {
         ]
     }
 
-    func chordNotes(for ring: RingKind) -> [String] {
-        switch ring {
-        case .major:
-            return majorTriadNotes
-        case .minor:
-            return minorTriadNotes
-        case .diminished:
-            return diminishedTriadNotes
-        }
-    }
-
     func label(for ring: RingKind) -> String {
         switch ring {
         case .major:
@@ -165,11 +115,7 @@ struct CircleSlice: Identifiable, Hashable {
     }
 
     func sharedScaleNotes(with other: CircleSlice) -> [String] {
-        scaleNotes.filter(other.scaleNotes.contains)
-    }
-
-    func sharedDiatonicChords(with other: CircleSlice) -> [String] {
-        diatonicTriads.filter(other.diatonicTriads.contains)
+        sharedItems(source: scaleNotes, other: other.scaleNotes, normalize: canonicalPitchClass)
     }
 
     private func minorChord(for degree: Int) -> String {
@@ -189,7 +135,7 @@ extension CircleSlice {
             diminishedLabel: "Bdim",
             signature: "0 sharps / 0 flats",
             scaleNotes: ["C", "D", "E", "F", "G", "A", "B"],
-            palette: Color(red: 0.94, green: 0.82, blue: 0.35)
+            palette: NSColor(srgbRed: 0.94, green: 0.82, blue: 0.35, alpha: 1)
         ),
         CircleSlice(
             majorLabel: "G",
@@ -197,7 +143,7 @@ extension CircleSlice {
             diminishedLabel: "F#dim",
             signature: "1 sharp",
             scaleNotes: ["G", "A", "B", "C", "D", "E", "F#"],
-            palette: Color(red: 0.35, green: 0.72, blue: 0.66)
+            palette: NSColor(srgbRed: 0.35, green: 0.72, blue: 0.66, alpha: 1)
         ),
         CircleSlice(
             majorLabel: "D",
@@ -205,7 +151,7 @@ extension CircleSlice {
             diminishedLabel: "C#dim",
             signature: "2 sharps",
             scaleNotes: ["D", "E", "F#", "G", "A", "B", "C#"],
-            palette: Color(red: 0.46, green: 0.79, blue: 0.89)
+            palette: NSColor(srgbRed: 0.46, green: 0.79, blue: 0.89, alpha: 1)
         ),
         CircleSlice(
             majorLabel: "A",
@@ -213,7 +159,7 @@ extension CircleSlice {
             diminishedLabel: "G#dim",
             signature: "3 sharps",
             scaleNotes: ["A", "B", "C#", "D", "E", "F#", "G#"],
-            palette: Color(red: 0.20, green: 0.34, blue: 0.53)
+            palette: NSColor(srgbRed: 0.20, green: 0.34, blue: 0.53, alpha: 1)
         ),
         CircleSlice(
             majorLabel: "E",
@@ -221,7 +167,7 @@ extension CircleSlice {
             diminishedLabel: "D#dim",
             signature: "4 sharps",
             scaleNotes: ["E", "F#", "G#", "A", "B", "C#", "D#"],
-            palette: Color(red: 0.48, green: 0.55, blue: 0.64)
+            palette: NSColor(srgbRed: 0.48, green: 0.55, blue: 0.64, alpha: 1)
         ),
         CircleSlice(
             majorLabel: "B",
@@ -229,15 +175,15 @@ extension CircleSlice {
             diminishedLabel: "A#dim",
             signature: "5 sharps",
             scaleNotes: ["B", "C#", "D#", "E", "F#", "G#", "A#"],
-            palette: Color(red: 0.33, green: 0.28, blue: 0.33)
+            palette: NSColor(srgbRed: 0.33, green: 0.28, blue: 0.33, alpha: 1)
         ),
         CircleSlice(
-            majorLabel: "F#/Gb",
+            majorLabel: "F#",
             minorLabel: "D#m",
             diminishedLabel: "E#dim",
-            signature: "6 sharps / 6 flats",
+            signature: "6 sharps",
             scaleNotes: ["F#", "G#", "A#", "B", "C#", "D#", "E#"],
-            palette: Color(red: 0.58, green: 0.56, blue: 0.60)
+            palette: NSColor(srgbRed: 0.58, green: 0.56, blue: 0.60, alpha: 1)
         ),
         CircleSlice(
             majorLabel: "Db",
@@ -245,7 +191,7 @@ extension CircleSlice {
             diminishedLabel: "Cdim",
             signature: "5 flats",
             scaleNotes: ["Db", "Eb", "F", "Gb", "Ab", "Bb", "C"],
-            palette: Color(red: 0.86, green: 0.43, blue: 0.36)
+            palette: NSColor(srgbRed: 0.86, green: 0.43, blue: 0.36, alpha: 1)
         ),
         CircleSlice(
             majorLabel: "Ab",
@@ -253,7 +199,7 @@ extension CircleSlice {
             diminishedLabel: "Gdim",
             signature: "4 flats",
             scaleNotes: ["Ab", "Bb", "C", "Db", "Eb", "F", "G"],
-            palette: Color(red: 0.90, green: 0.55, blue: 0.46)
+            palette: NSColor(srgbRed: 0.90, green: 0.55, blue: 0.46, alpha: 1)
         ),
         CircleSlice(
             majorLabel: "Eb",
@@ -261,7 +207,7 @@ extension CircleSlice {
             diminishedLabel: "Ddim",
             signature: "3 flats",
             scaleNotes: ["Eb", "F", "G", "Ab", "Bb", "C", "D"],
-            palette: Color(red: 0.91, green: 0.65, blue: 0.36)
+            palette: NSColor(srgbRed: 0.91, green: 0.65, blue: 0.36, alpha: 1)
         ),
         CircleSlice(
             majorLabel: "Bb",
@@ -269,7 +215,7 @@ extension CircleSlice {
             diminishedLabel: "Adim",
             signature: "2 flats",
             scaleNotes: ["Bb", "C", "D", "Eb", "F", "G", "A"],
-            palette: Color(red: 0.91, green: 0.72, blue: 0.44)
+            palette: NSColor(srgbRed: 0.91, green: 0.72, blue: 0.44, alpha: 1)
         ),
         CircleSlice(
             majorLabel: "F",
@@ -277,7 +223,7 @@ extension CircleSlice {
             diminishedLabel: "Edim",
             signature: "1 flat",
             scaleNotes: ["F", "G", "A", "Bb", "C", "D", "E"],
-            palette: Color(red: 0.95, green: 0.78, blue: 0.40)
+            palette: NSColor(srgbRed: 0.95, green: 0.78, blue: 0.40, alpha: 1)
         )
     ]
 }
@@ -309,20 +255,6 @@ private let canonicalPitchClasses: [String: String] = [
 
 func canonicalPitchClass(for note: String) -> String {
     canonicalPitchClasses[note] ?? note
-}
-
-func canonicalChordIdentity(for chord: String) -> String {
-    if chord.hasSuffix("dim") {
-        let root = String(chord.dropLast(3))
-        return "\(canonicalPitchClass(for: root))dim"
-    }
-
-    if chord.hasSuffix("m") {
-        let root = String(chord.dropLast())
-        return "\(canonicalPitchClass(for: root))m"
-    }
-
-    return canonicalPitchClass(for: chord)
 }
 
 func sharedItems(

@@ -20,6 +20,7 @@ final class AppController {
     private var updaterController: AppUpdaterController?
     private var hotKeyDefaultsObserver: NSObjectProtocol?
     private var hasRegisteredHotKeyHandler = false
+    private var isSettingsVisible = false
 
     private init() {}
 
@@ -41,7 +42,7 @@ final class AppController {
             AppLogger.lifecycle.debug("Created settings window controller")
         }
 
-        if updaterController == nil {
+        if updaterController == nil && AppRuntime.canUpdate {
             updaterController = AppUpdaterController()
             updaterController?.onUpdateCycleFinished = { [weak self] in
                 Task { @MainActor [weak self] in
@@ -51,17 +52,18 @@ final class AppController {
             AppLogger.lifecycle.debug("Created Sparkle updater controller")
         }
 
-        PanelHotKey.ensureDefaultShortcut()
         refreshShortcutDescription()
-        observeShortcutChangesIfNeeded()
-        registerHotKeyHandlerIfNeeded()
+        if !AppRuntime.isPreview {
+            observeShortcutChangesIfNeeded()
+            registerHotKeyHandlerIfNeeded()
+        }
         refreshStatusItem()
     }
 
     func togglePanel(source: PanelToggleSource = .direct) {
         AppLogger.panel.debug("Toggling panel from \(source.rawValue, privacy: .public)")
 
-        if model.isPanelVisible {
+        if model.isPanelVisible && !NSApp.isHidden && panelController?.window?.isMiniaturized != true {
             hidePanel()
         } else {
             revealPanel(source: source)
@@ -72,16 +74,11 @@ final class AppController {
         togglePanel(source: .menuBar)
     }
 
-    func updateTheme(_ theme: PanelTheme) {
-        guard model.theme != theme else { return }
-        model.theme = theme
-        AppLogger.lifecycle.notice("Updated panel theme to \(theme.title, privacy: .public)")
-    }
-
     func openSettingsWindow() {
         start()
         AppLogger.lifecycle.notice("Opening settings window")
         setActivationPolicy(.regular, reason: "settingsOpen")
+        isSettingsVisible = true
         settingsWindowController?.present()
     }
 
@@ -93,10 +90,21 @@ final class AppController {
     }
 
     func checkForUpdates() {
+        guard AppRuntime.canUpdate else { return }
         start()
         AppLogger.updates.notice("Checking for updates with Sparkle")
         setActivationPolicy(.regular, reason: "sparkleCheck")
         updaterController?.checkForUpdates()
+    }
+
+    var automaticallyChecksForUpdates: Bool {
+        get { updaterController?.automaticallyChecksForUpdates ?? false }
+        set { updaterController?.automaticallyChecksForUpdates = newValue }
+    }
+
+    var automaticallyDownloadsUpdates: Bool {
+        get { updaterController?.automaticallyDownloadsUpdates ?? false }
+        set { updaterController?.automaticallyDownloadsUpdates = newValue }
     }
 
     var canCheckForUpdates: Bool {
@@ -107,6 +115,7 @@ final class AppController {
         start()
         AppLogger.panel.notice("Revealing panel from \(source.rawValue, privacy: .public)")
         setActivationPolicy(.regular, reason: "reveal")
+        NSApp.unhide(nil)
         panelController?.present()
         model.isPanelVisible = true
         refreshStatusItem()
@@ -128,6 +137,7 @@ final class AppController {
     }
 
     func settingsDidClose() {
+        isSettingsVisible = false
         AppLogger.lifecycle.notice("Settings window closed")
         updateActivationPolicyIfNeeded(reason: "settingsClose")
     }
@@ -139,6 +149,7 @@ final class AppController {
     }
 
     func resetHotKeyToDefault() {
+        guard !AppRuntime.isPreview else { return }
         PanelHotKey.resetToDefault()
         refreshShortcutDescription()
         refreshStatusItem()
@@ -179,7 +190,7 @@ final class AppController {
     }
 
     private func refreshShortcutDescription() {
-        model.shortcutDescription = PanelHotKey.description
+        model.shortcutDescription = AppRuntime.isPreview ? "Preview" : PanelHotKey.description
     }
 
     private func refreshStatusItem() {
@@ -197,8 +208,7 @@ final class AppController {
     }
 
     private func updateActivationPolicyIfNeeded(reason: String) {
-        let settingsVisible = settingsWindowController?.window?.isVisible == true
-        let policy: NSApplication.ActivationPolicy = (model.isPanelVisible || settingsVisible) ? .regular : .accessory
+        let policy: NSApplication.ActivationPolicy = (model.isPanelVisible || isSettingsVisible) ? .regular : .accessory
         setActivationPolicy(policy, reason: reason)
     }
 }

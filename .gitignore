@@ -4,3 +4,8 @@
 .derived_ci/
 dist/
 Tonica.xcodeproj/project.xcworkspace/xcuserdata/
+.build-preview/
+.release/
+node_modules/
+output/
+__pycache__/

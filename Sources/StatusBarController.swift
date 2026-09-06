@@ -5,164 +5,60 @@ final class StatusBarController: NSObject, NSMenuDelegate {
     private weak var controller: AppController?
     private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
     private let menu = NSMenu()
-    private let aboutItem = NSMenuItem(title: "", action: #selector(openAboutPanel), keyEquivalent: "")
-    private let versionItem = NSMenuItem(title: "", action: nil, keyEquivalent: "")
-    private let toggleItem = NSMenuItem(title: "Reveal Circle", action: #selector(togglePanel), keyEquivalent: "")
-    private let checkForUpdatesItem = NSMenuItem(title: "Check for Updates…", action: #selector(checkForUpdates), keyEquivalent: "")
+    private let toggleItem = NSMenuItem(title: "Show Tonica", action: #selector(togglePanel), keyEquivalent: "")
+    private let updateItem = NSMenuItem(title: "Check for Updates…", action: #selector(checkForUpdates), keyEquivalent: "")
     private let shortcutItem = NSMenuItem(title: "", action: nil, keyEquivalent: "")
-    private let settingsItem = NSMenuItem(title: "Settings…", action: #selector(openSettings), keyEquivalent: "")
-    private let quitItem = NSMenuItem(title: "", action: #selector(quitApp), keyEquivalent: "")
-    private var animationTimer: Timer?
-    private let animationStartDate = Date()
-
     init(controller: AppController) {
         self.controller = controller
         super.init()
-        configureMenu()
-        configureStatusItem()
-        startStatusItemAnimation()
-    }
-
-    func update(isPanelVisible: Bool, shortcutDescription: String) {
-        toggleItem.title = isPanelVisible ? "Hide Circle" : "Reveal Circle"
-        shortcutItem.title = "Shortcut: \(shortcutDescription)"
-        statusItem.button?.toolTip = "Tonica"
-        checkForUpdatesItem.isEnabled = controller?.canCheckForUpdates ?? true
-    }
-
-    private func configureMenu() {
         menu.delegate = self
-        aboutItem.title = "About \(AppMetadata.appName)"
-        aboutItem.target = self
-        versionItem.title = AppMetadata.menuVersionTitle
-        versionItem.isEnabled = false
-        toggleItem.target = self
-        checkForUpdatesItem.target = self
+        menu.autoenablesItems = false
         shortcutItem.isEnabled = false
-        settingsItem.target = self
-        quitItem.title = "Quit \(AppMetadata.appName)"
-        quitItem.target = self
-
-        menu.items = [
-            aboutItem,
-            versionItem,
-            .separator(),
-            toggleItem,
-            shortcutItem,
-            .separator(),
-            checkForUpdatesItem,
-            settingsItem,
-            .separator(),
-            quitItem
-        ]
-    }
-
-    private func configureStatusItem() {
-        guard let button = statusItem.button else {
-            AppLogger.lifecycle.error("Failed to create status item button")
-            return
-        }
-
-        let image = Self.makeStatusBarImage(phase: 0)
-        image.isTemplate = false
-
-        button.image = image
-        button.imageScaling = .scaleProportionallyDown
-        button.imagePosition = .imageOnly
-        button.title = ""
-        button.toolTip = "Tonica"
-
-        statusItem.menu = menu
-        statusItem.isVisible = true
-
-        AppLogger.lifecycle.notice("Installed AppKit status item")
-    }
-
-    private func startStatusItemAnimation() {
-        animationTimer?.invalidate()
-
-        let timer = Timer(timeInterval: 1.0 / 24.0, repeats: true) { [weak self] _ in
-            Task { @MainActor in
-                self?.updateAnimatedStatusItemImage()
-            }
-        }
-        animationTimer = timer
-        RunLoop.main.add(timer, forMode: .common)
-    }
-
-    private func updateAnimatedStatusItemImage() {
+        let title = NSMenuItem(title: "Tonica \(AppMetadata.versionDescription)", action: nil, keyEquivalent: "")
+        title.isEnabled = false
+        let settings = NSMenuItem(title: "Settings…", action: #selector(openSettings), keyEquivalent: ",")
+        let about = NSMenuItem(title: "About Tonica", action: #selector(openAbout), keyEquivalent: "")
+        let quit = NSMenuItem(title: "Quit Tonica", action: #selector(quitApp), keyEquivalent: "q")
+        for item in [toggleItem, updateItem, settings, about, quit] { item.target = self }
+        menu.items = [title, toggleItem, shortcutItem, .separator(), settings, updateItem, about, .separator(), quit]
         guard let button = statusItem.button else { return }
-        let phase = Date().timeIntervalSince(animationStartDate)
-        let image = Self.makeStatusBarImage(phase: phase)
-        image.isTemplate = false
-        button.image = image
+        button.image = Self.makeStatusBarImage()
+        button.imagePosition = .imageOnly
+        button.target = self; button.action = #selector(clicked)
+        button.sendAction(on: [.leftMouseUp, .rightMouseUp])
+        button.setAccessibilityLabel(AppRuntime.isPreview ? "Tonica Preview" : "Tonica")
+        statusItem.isVisible = true
+        AppLogger.lifecycle.notice("Installed static AppKit status item")
     }
-
-    func menuWillOpen(_ menu: NSMenu) {
-        checkForUpdatesItem.isEnabled = controller?.canCheckForUpdates ?? true
+    func update(isPanelVisible: Bool, shortcutDescription: String) {
+        toggleItem.title = isPanelVisible ? "Hide Tonica" : "Show Tonica"
+        shortcutItem.title = "Shortcut: \(shortcutDescription)"
+        statusItem.button?.toolTip = "Tonica · \(shortcutDescription)\nClick to open. Right-click for settings and updates."
     }
-
-    @objc
-    private func togglePanel() {
-        controller?.togglePanelFromMenuBar()
+    @objc private func clicked() {
+        if NSApp.currentEvent?.type == .rightMouseUp || NSApp.currentEvent?.modifierFlags.contains(.control) == true {
+            statusItem.menu = menu
+            statusItem.button?.performClick(nil)
+            statusItem.menu = nil
+        } else { controller?.togglePanelFromMenuBar() }
     }
-
-    @objc
-    private func openAboutPanel() {
-        controller?.showAboutPanel()
-    }
-
-    @objc
-    private func openSettings() {
-        controller?.openSettingsWindow()
-    }
-
-    @objc
-    private func checkForUpdates() {
-        controller?.checkForUpdates()
-    }
-
-    @objc
-    private func quitApp() {
-        NSApplication.shared.terminate(nil)
-    }
-
-    private static func makeStatusBarImage(phase: TimeInterval, size: CGFloat = 19) -> NSImage {
-        let imageSize = NSSize(width: size, height: size)
-        let image = NSImage(size: imageSize, flipped: false) { rect in
-            let side = min(rect.width, rect.height)
-            let pulseCycle = phase * (.pi * 2.0) / 2.9
-            let middlePulse = (sin(pulseCycle - (.pi / 2.0)) + 1.0) * 0.5
-            let innerPulse = (sin((pulseCycle * 1.08) + (.pi / 5.0)) + 1.0) * 0.5
-            let outerDiameter = side * 0.96
-            let sizeRatios: [CGFloat] = [1.0, 496.0 / 652.0, 292.0 / 652.0]
-            let colors: [NSColor] = [
-                NSColor(calibratedRed: 1.0, green: 0.792, blue: 0.157, alpha: 1.0),
-                NSColor(calibratedRed: 0.0, green: 0.812, blue: 1.0, alpha: 1.0),
-                NSColor(calibratedRed: 1.0, green: 0.235, blue: 0.675, alpha: 1.0)
-            ]
-            let scaleModifiers: [CGFloat] = [
-                1.0,
-                0.93 + (0.08 * middlePulse),
-                0.83 + (0.16 * innerPulse)
-            ]
-
-            for (index, ratio) in sizeRatios.enumerated() {
-                let layerSize = outerDiameter * ratio * scaleModifiers[index]
-                let layerRect = CGRect(
-                    x: rect.midX - layerSize * 0.5,
-                    y: rect.midY - layerSize * 0.5,
-                    width: layerSize,
-                    height: layerSize
-                )
-
-                colors[index].setFill()
-                NSBezierPath(ovalIn: layerRect).fill()
+    func menuWillOpen(_ menu: NSMenu) { updateItem.isEnabled = controller?.canCheckForUpdates ?? false }
+    @objc private func togglePanel() { controller?.togglePanelFromMenuBar() }
+    @objc private func openSettings() { controller?.openSettingsWindow() }
+    @objc private func checkForUpdates() { controller?.checkForUpdates() }
+    @objc private func openAbout() { controller?.showAboutPanel() }
+    @objc private func quitApp() { NSApp.terminate(nil) }
+    private static func makeStatusBarImage() -> NSImage {
+        let image = NSImage(size: NSSize(width: 19, height: 19), flipped: false) { rect in
+            NSColor.black.setStroke()
+            for ratio: CGFloat in [1, 496.0 / 652.0, 292.0 / 652.0] {
+                let d = 17 * ratio
+                let p = NSBezierPath(ovalIn: NSRect(x: rect.midX - d / 2, y: rect.midY - d / 2, width: d, height: d))
+                p.lineWidth = 1.3; p.stroke()
             }
-
             return true
         }
-
+        image.isTemplate = true
         return image
     }
 }

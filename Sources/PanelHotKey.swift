@@ -9,12 +9,6 @@ extension KeyboardShortcuts.Name {
 
 enum PanelHotKey {
     @MainActor
-    static func ensureDefaultShortcut() {
-        guard KeyboardShortcuts.getShortcut(for: .togglePanel) == nil else { return }
-        KeyboardShortcuts.reset(.togglePanel)
-    }
-
-    @MainActor
     static func resetToDefault() {
         KeyboardShortcuts.reset(.togglePanel)
     }

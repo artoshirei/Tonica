@@ -45,7 +45,7 @@ cp "$ARCHIVE_PATH" "$TMP_DIR/$ARCHIVE_NAME"
 args=(
   --download-url-prefix "$DOWNLOAD_URL_PREFIX"
   --link "$PRODUCT_LINK"
-  -o "$OUTPUT_NAME"
+  -o "$TMP_DIR/$OUTPUT_NAME"
 )
 
 if [[ -n "$FULL_RELEASE_NOTES_URL" ]]; then
@@ -62,8 +62,6 @@ fi
 
 GENERATED_PATH=""
 for candidate in \
-  "$OUTPUT_PATH" \
-  "$PWD/$OUTPUT_NAME" \
   "$TMP_DIR/$OUTPUT_NAME" \
   "$TMP_DIR/appcast.xml"
 do

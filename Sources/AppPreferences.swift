@@ -1,116 +1,27 @@
-import Foundation
-import SwiftUI
+import AppKit
 
-enum PanelTheme: String, CaseIterable, Identifiable {
-    case midnight
-    case ocean
-    case ember
+@MainActor
+enum TonicaAppearance {
+    static let accent = NSColor(srgbRed: 0.64, green: 0.72, blue: 1, alpha: 1)
+    static let background = NSColor(srgbRed: 0.045, green: 0.045, blue: 0.052, alpha: 1)
+    static let surface = NSColor(srgbRed: 0.075, green: 0.075, blue: 0.085, alpha: 1)
+    static let border = NSColor(srgbRed: 0.16, green: 0.16, blue: 0.18, alpha: 1)
+    static let appearance = NSAppearance(named: .darkAqua)
+}
 
-    var id: String { rawValue }
-
-    var title: String {
-        switch self {
-        case .midnight:
-            return "Midnight"
-        case .ocean:
-            return "Ocean"
-        case .ember:
-            return "Ember"
-        }
-    }
-
-    var backgroundColors: [Color] {
-        switch self {
-        case .midnight:
-            return [
-                Color(red: 0.06, green: 0.08, blue: 0.12),
-                Color(red: 0.08, green: 0.12, blue: 0.20),
-                Color(red: 0.12, green: 0.10, blue: 0.08)
-            ]
-        case .ocean:
-            return [
-                Color(red: 0.04, green: 0.10, blue: 0.16),
-                Color(red: 0.05, green: 0.22, blue: 0.28),
-                Color(red: 0.09, green: 0.16, blue: 0.18)
-            ]
-        case .ember:
-            return [
-                Color(red: 0.12, green: 0.07, blue: 0.06),
-                Color(red: 0.22, green: 0.11, blue: 0.08),
-                Color(red: 0.16, green: 0.08, blue: 0.12)
-            ]
-        }
-    }
-
-    var highlightColor: Color {
-        switch self {
-        case .midnight:
-            return Color(red: 0.23, green: 0.55, blue: 0.98)
-        case .ocean:
-            return Color(red: 0.12, green: 0.78, blue: 0.72)
-        case .ember:
-            return Color(red: 0.96, green: 0.55, blue: 0.22)
-        }
-    }
-
-    var accentGlowColor: Color {
-        switch self {
-        case .midnight:
-            return Color(red: 0.96, green: 0.63, blue: 0.23)
-        case .ocean:
-            return Color(red: 0.48, green: 0.77, blue: 0.96)
-        case .ember:
-            return Color(red: 0.96, green: 0.76, blue: 0.25)
-        }
-    }
+enum Instrument: String, CaseIterable { case piano, guitar
+    var title: String { rawValue.capitalized }
 }
 
 enum AppPreferences {
-    private enum Key {
-        static let theme = "theme"
-        static let panelFrame = "panelFrame"
-    }
-
-    static func loadTheme() -> PanelTheme {
-        let defaults = UserDefaults.standard
-
-        guard let rawValue = defaults.string(forKey: Key.theme),
-              let theme = PanelTheme(rawValue: rawValue) else {
-            return .midnight
-        }
-
-        return theme
-    }
-
-    static func saveTheme(_ theme: PanelTheme) {
-        UserDefaults.standard.set(theme.rawValue, forKey: Key.theme)
-    }
-
     static func loadPanelFrame() -> CGRect? {
-        let defaults = UserDefaults.standard
-
-        guard let frame = defaults.dictionary(forKey: Key.panelFrame) else { return nil }
-        guard let x = frame["x"] as? Double,
-              let y = frame["y"] as? Double,
-              let width = frame["width"] as? Double,
-              let height = frame["height"] as? Double else {
-            return nil
-        }
-
-        let rect = CGRect(x: x, y: y, width: width, height: height)
-        guard rect.width > 0, rect.height > 0 else { return nil }
-        return rect
+        guard let f = UserDefaults.standard.dictionary(forKey: "panelFrame"),
+              let x = f["x"] as? Double, let y = f["y"] as? Double,
+              let w = f["width"] as? Double, let h = f["height"] as? Double,
+              [x, y, w, h].allSatisfy(\.isFinite), w > 0, h > 0 else { return nil }
+        return CGRect(x: x, y: y, width: w, height: h)
     }
-
     static func savePanelFrame(_ frame: CGRect) {
-        UserDefaults.standard.set(
-            [
-                "x": frame.origin.x,
-                "y": frame.origin.y,
-                "width": frame.width,
-                "height": frame.height
-            ],
-            forKey: Key.panelFrame
-        )
+        UserDefaults.standard.set(["x": frame.minX, "y": frame.minY, "width": frame.width, "height": frame.height], forKey: "panelFrame")
     }
 }

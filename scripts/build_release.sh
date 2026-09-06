@@ -19,6 +19,9 @@ APP_PATH="$EXPORT_PATH/${APP_NAME}.app"
 DMG_PATH="$DIST_DIR/${APP_NAME}.dmg"
 NOTARIZE_ZIP="$DIST_DIR/${APP_NAME}-notarize.zip"
 
+[[ "$SIGN_IDENTITY" == "Developer ID Application:"* ]] || { echo "Developer ID required" >&2; exit 1; }
+export APPLE_NOTARY_KEYCHAIN_PROFILE="${APPLE_NOTARY_KEYCHAIN_PROFILE:-fowl-notary}"
+xcrun notarytool history --keychain-profile "$APPLE_NOTARY_KEYCHAIN_PROFILE" >/dev/null
 mkdir -p "$DIST_DIR"
 rm -rf "$ARCHIVE_PATH" "$EXPORT_PATH" "$XCRESULT_PATH" "$NOTARIZE_ZIP"
 
@@ -31,6 +34,7 @@ xcodebuild archive \
   -archivePath "$ARCHIVE_PATH" \
   -derivedDataPath "$DERIVED_DATA_PATH" \
   -resultBundlePath "$XCRESULT_PATH" \
+  ARCHS="arm64 x86_64" \
   CODE_SIGN_STYLE=Manual \
   CODE_SIGN_IDENTITY="$SIGN_IDENTITY" \
   DEVELOPMENT_TEAM="$TEAM_ID" \
@@ -64,7 +68,7 @@ xcodebuild -exportArchive \
 test -f "$APP_PATH/Contents/MacOS/$APP_NAME"
 chmod +x "$ROOT_DIR/scripts/ensure_app_icon.sh"
 "$ROOT_DIR/scripts/ensure_app_icon.sh" "$APP_PATH"
-codesign --force --deep --sign "$SIGN_IDENTITY" --timestamp --options runtime \
+codesign --force --sign "$SIGN_IDENTITY" --timestamp --options runtime \
   --preserve-metadata=entitlements "$APP_PATH"
 codesign --verify --deep --strict --verbose=2 "$APP_PATH"
 
@@ -76,7 +80,7 @@ if [[ -n "${APPLE_NOTARY_KEYCHAIN_PROFILE:-}" || -n "${APPLE_NOTARY_API_KEY_PATH
   spctl --assess --type exec -vv "$APP_PATH"
 fi
 
-"$ROOT_DIR/scripts/build_dmg.sh" "$APP_PATH" "$DMG_PATH" "$APP_NAME"
+CI=1 "$ROOT_DIR/scripts/build_dmg.sh" "$APP_PATH" "$DMG_PATH" "$APP_NAME"
 codesign --force --sign "$SIGN_IDENTITY" --timestamp --verbose=2 "$DMG_PATH"
 codesign --verify --verbose=2 "$DMG_PATH"
 

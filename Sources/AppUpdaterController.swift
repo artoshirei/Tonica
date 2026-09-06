@@ -29,6 +29,16 @@ final class AppUpdaterController: NSObject {
         super.init()
     }
 
+    var automaticallyChecksForUpdates: Bool {
+        get { updaterController.updater.automaticallyChecksForUpdates }
+        set { updaterController.updater.automaticallyChecksForUpdates = newValue }
+    }
+
+    var automaticallyDownloadsUpdates: Bool {
+        get { updaterController.updater.automaticallyDownloadsUpdates }
+        set { updaterController.updater.automaticallyDownloadsUpdates = newValue }
+    }
+
     var canCheckForUpdates: Bool {
         updaterController.updater.canCheckForUpdates
     }
