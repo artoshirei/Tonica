@@ -36,3 +36,19 @@ The app is rebuilt in AppKit, including its entrypoint, circle, instrument views
 The instrument diagrams use standard guitar tuning and major/natural minor scales. The minor view explicitly describes raising degree 7 for harmonic minor. This release does not add alternate tunings, a metronome, or a microphone tuner.
 
 A published feed and cryptographically valid archive prove update availability. A previous-version installation and relaunch is a separate verification layer and must be reported separately.
+
+## Published release
+
+On 2026-09-06, version 1.1.0 (build 7) was built from tag `v1.1.0`, commit `c2ebd630cc4ed52511517811917747f8e277046e`, exported from the saved project through `git archive`. Both architectures, Developer ID signing, app and DMG notarization/stapling, and Gatekeeper assessment passed.
+
+The immutable DMG is 3,510,992 bytes, SHA-256 `d870c1b7d636f3cd24af3e8b533b232d835eeaefb0d03ae77ac69f538b89e602`. The exact and latest public downloads matched these bytes. After GitHub's raw cache refreshed, the live feed matched the candidate and its enclosure passed length, hash, version, and pinned Ed25519 verification.
+
+A publication attempt correctly stopped before uploading when inherited terminal color variables made GitHub CLI output invalid JSON. The release entrypoint now clears those overrides. The same signed candidate was then published without another version bump or artifact replacement.
+
+## Real previous-version update attempt
+
+A clean fixture on the physical mac2 installed the original public 1.0.5 (build 6) DMG at `/Users/argo/Applications/Tonica.app`. Its hash, signature, notarization, live process, and menu version passed. There was no prior Tonica user data, and no data reset was performed.
+
+After publication, its actual Check for Updates menu action succeeded and Tonica's logs recorded the live feed request completing with HTTP 200. A new Tonica-owned panel appeared. Installation could not be verified: app-scoped Computer Use repeatedly returned `cgWindowNotFound`, and window accessibility references and point hit tests did not expose the dialog controls. No screenshot or readable update offer was obtained, no installation was accepted, and no manual app replacement was substituted. The coordinator ended the remote tester after those fallbacks failed.
+
+Final read-only checks confirmed that the fixture remained alive as PID 23390 on 1.0.5 (6), with no Tonica crash report. Therefore update availability is verified, but a real Sparkle installation and post-update relaunch are not. The remaining handoff is to operate Check for Updates on an accessible Mac, accept the offered 1.1.0 update, and verify Settings reports 1.1.0 (7) after relaunch.
