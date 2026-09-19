@@ -3,14 +3,14 @@
     <channel>
         <title>Tonica</title>
         <item>
-            <title>1.1.0</title>
-            <pubDate>Sun, 06 Sep 2026 22:06:52 +0500</pubDate>
+            <title>1.2.0</title>
+            <pubDate>Sun, 20 Sep 2026 02:33:19 +0500</pubDate>
             <link>https://artoshi.work/tonica</link>
-            <sparkle:fullReleaseNotesLink>https://github.com/artoshirei/Tonica/releases/tag/v1.1.0</sparkle:fullReleaseNotesLink>
-            <sparkle:version>7</sparkle:version>
-            <sparkle:shortVersionString>1.1.0</sparkle:shortVersionString>
+            <sparkle:fullReleaseNotesLink>https://github.com/artoshirei/Tonica/releases/tag/v1.2.0</sparkle:fullReleaseNotesLink>
+            <sparkle:version>8</sparkle:version>
+            <sparkle:shortVersionString>1.2.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <enclosure url="https://github.com/artoshirei/Tonica/releases/download/v1.1.0/Tonica.dmg" length="3510992" type="application/octet-stream" sparkle:edSignature="FHmnRmvY0cqJ3PxDqnst5wAjCeWVlL+89rE6uSCr1P86TRUtxwbNWoNsUhlY5KxvrhqFI/IIgmi+0CzG6w7XAg=="/>
+            <enclosure url="https://github.com/artoshirei/Tonica/releases/download/v1.2.0/Tonica.dmg" length="3439780" type="application/octet-stream" sparkle:edSignature="YLoaKaMlZk9EDaALHknpPde7SZjvnFG1DVdMQPgs7+BkvJBFBNQc6NF7PUvzosX4qmM/mJO3dgYrRku2eZqiAg=="/>
         </item>
     </channel>
 </rss>
