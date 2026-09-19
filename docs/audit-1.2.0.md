@@ -25,3 +25,15 @@ Click to hear chords, play buttons for progressions, keyboard control with an on
 * The isolated preview was driven through app-scoped accessibility actions and key events sent only to its process: arrows, Up and Down, 1 to 7, keys with focus inside the scroll pane, all copy buttons with measured frames before, during and after feedback, progression and note playback without errors, Settings unchanged.
 * Toggle branches proven on the running preview: not in focus brings forward, in focus hides, hidden shows, kept on top hides without focus. The status item window reports `canBecomeKeyWindow = 0` in the live process, so a physical click cannot take focus from the panel before the toggle runs.
 * Hover rendering was inspected with a temporary probe, since removed. Synthetic pointer moves do not reach AppKit tracking areas, so hover routing from a physical pointer, and how playback sounds, remain for a person to confirm.
+
+## Published release
+
+On 2026-09-20, version 1.2.0 (build 8) was built from tag `v1.2.0`, commit `23864b57f1ea563b9bbc2d8783f0fe230580f3b7`, exported through `git archive`. Both architectures, Developer ID signing, hardened runtime, app and DMG notarization and stapling, and Gatekeeper assessment passed.
+
+The immutable DMG is 3,439,780 bytes, SHA-256 `3aa2cbc7371de96309a5e8b61380ae31f372ae06c3cffc70d616107285d08a73`. After publication, the exact and latest public downloads were fetched anonymously and both matched these bytes. The live feed reports 1.2.0 (8) with the matching length, and the publisher verified its pinned Ed25519 signature.
+
+The candidate build waited at a keychain dialog: `generate_appcast` needed approval to use the Sparkle key, although `sign_update` in preflight was already allowed. It continued after approval with no rebuild. Choosing Always Allow for `generate_appcast` removes this wait.
+
+Two publish attempts stopped before any upload because the only address DNS returned for github.com dropped most connections. Nothing was published by them. The same candidate was then published at the same tag with github.com pinned to a healthy GitHub address through environment variables for that run only. TLS verification was unchanged. No second bump, no replaced artifact.
+
+A real Sparkle update from an installed 1.1.0 and the relaunch into 1.2.0 were not exercised.
