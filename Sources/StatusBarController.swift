@@ -42,7 +42,10 @@ final class StatusBarController: NSObject, NSMenuDelegate {
             statusItem.menu = nil
         } else { controller?.togglePanelFromMenuBar() }
     }
-    func menuWillOpen(_ menu: NSMenu) { updateItem.isEnabled = controller?.canCheckForUpdates ?? false }
+    func menuWillOpen(_ menu: NSMenu) {
+        controller?.refreshStatusItem()
+        updateItem.isEnabled = controller?.canCheckForUpdates ?? false
+    }
     @objc private func togglePanel() { controller?.togglePanelFromMenuBar() }
     @objc private func openSettings() { controller?.openSettingsWindow() }
     @objc private func checkForUpdates() { controller?.checkForUpdates() }

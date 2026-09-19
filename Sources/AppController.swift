@@ -63,11 +63,16 @@ final class AppController {
     func togglePanel(source: PanelToggleSource = .direct) {
         AppLogger.panel.debug("Toggling panel from \(source.rawValue, privacy: .public)")
 
-        if model.isPanelVisible && !NSApp.isHidden && panelController?.window?.isMiniaturized != true {
+        if isPanelFrontmost {
             hidePanel()
         } else {
             revealPanel(source: source)
         }
+    }
+
+    // Visible is not enough: a window buried behind other apps or left on another Space should come forward.
+    private var isPanelFrontmost: Bool {
+        model.isPanelVisible && !NSApp.isHidden && panelController?.isFrontmost == true
     }
 
     func togglePanelFromMenuBar() {
@@ -193,9 +198,9 @@ final class AppController {
         model.shortcutDescription = AppRuntime.isPreview ? "Preview" : PanelHotKey.description
     }
 
-    private func refreshStatusItem() {
+    func refreshStatusItem() {
         statusBarController?.update(
-            isPanelVisible: model.isPanelVisible,
+            isPanelVisible: isPanelFrontmost,
             shortcutDescription: model.shortcutDescription
         )
     }

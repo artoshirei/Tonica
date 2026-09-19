@@ -24,6 +24,9 @@ struct TheoryTests {
                 let ascendingScale = ascendingMIDINotes(scale + [scale[0]])
                 precondition(ascendingScale.last! - ascendingScale.first! == 12)
             }
+            for (chords, progressions) in [(slice.diatonicTriads, slice.majorProgressions), (slice.minorDiatonicTriads, slice.minorProgressions)] {
+                for recipe in progressions { precondition(recipe.chords.allSatisfy(chords.contains), "Unplayable progression in \(slice.majorLabel)") }
+            }
         }
         precondition(midiPitchClass("E#") == midiPitchClass("F"))
         precondition(midiPitchClass("Gb") == midiPitchClass("F#"))
@@ -32,6 +35,6 @@ struct TheoryTests {
             let a = CircleSlice.all[index], b = CircleSlice.all[(index + 1) % 12]
             precondition(a.sharedScaleNotes(with: b).count == 6)
         }
-        print("Passed: 24 scales, 168 triads, ascending playback, enharmonic matching, and all neighboring keys.")
+        print("Passed: 24 scales, 168 triads, 48 playable progressions, ascending playback, enharmonic matching, and all neighboring keys.")
     }
 }

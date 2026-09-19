@@ -5,6 +5,7 @@ func label(_ text: String, size: CGFloat = 13, weight: NSFont.Weight = .regular,
     let field = NSTextField(wrappingLabelWithString: text)
     field.font = .systemFont(ofSize: size, weight: weight)
     field.textColor = secondary ? .secondaryLabelColor : .labelColor
+    field.isSelectable = false
     field.setContentCompressionResistancePriority(.required, for: .vertical)
     return field
 }
@@ -22,21 +23,28 @@ func stack(_ views: [NSView], vertical: Bool = true, spacing: CGFloat = 12) -> N
 final class ActionButton: NSButton {
     var handler: (() -> Void)?
     private var copyFeedbackTask: Task<Void, Never>?
-    private var titleBeforeCopy: String?
+    private var imageBeforeCopy: NSImage?
+    private var widthDuringCopy: NSLayoutConstraint?
     init(_ title: String, symbol: String? = nil, handler: @escaping () -> Void) {
         self.handler = handler
         super.init(frame: .zero)
         self.title = title
         bezelStyle = .rounded
         target = self; action = #selector(invoke)
-        if let symbol { image = NSImage(systemSymbolName: symbol, accessibilityDescription: nil); imagePosition = .imageLeading }
+        if let symbol { image = NSImage(systemSymbolName: symbol, accessibilityDescription: nil); imagePosition = title.isEmpty ? .imageOnly : .imageLeading }
     }
     required init?(coder: NSCoder) { fatalError() }
     @objc private func invoke() { handler?() }
+    // The icon confirms the copy so the button keeps its title. The checkmark is narrower, so the width is held.
     func showCopiedFeedback() {
-        if titleBeforeCopy == nil { titleBeforeCopy = title }
+        if imageBeforeCopy == nil {
+            imageBeforeCopy = image
+            widthDuringCopy = widthAnchor.constraint(equalToConstant: frame.width)
+            widthDuringCopy?.isActive = true
+        }
         copyFeedbackTask?.cancel()
-        title = "Copied to clipboard"
+        image = NSImage(systemSymbolName: "checkmark", accessibilityDescription: nil)
+        NSAccessibility.post(element: self, notification: .announcementRequested, userInfo: [.announcement: "Copied to clipboard", .priority: NSAccessibilityPriorityLevel.high.rawValue])
         copyFeedbackTask = Task { @MainActor [weak self] in
             try? await Task.sleep(for: .seconds(1.5))
             guard !Task.isCancelled else { return }
@@ -46,8 +54,10 @@ final class ActionButton: NSButton {
     func resetCopyFeedback() {
         copyFeedbackTask?.cancel()
         copyFeedbackTask = nil
-        if let titleBeforeCopy { title = titleBeforeCopy }
-        titleBeforeCopy = nil
+        if let imageBeforeCopy { image = imageBeforeCopy }
+        imageBeforeCopy = nil
+        widthDuringCopy?.isActive = false
+        widthDuringCopy = nil
     }
 }
 

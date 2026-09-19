@@ -42,6 +42,11 @@ final class FloatingPanelController: NSWindowController, NSWindowDelegate {
         NSApp.activate(ignoringOtherApps: true)
     }
     func dismiss() { remember(); window?.orderOut(nil) }
+    // A window kept on top is in view without being key.
+    var isFrontmost: Bool {
+        guard let window, window.isVisible, !window.isMiniaturized, window.isOnActiveSpace else { return false }
+        return window.isKeyWindow || model.keepOnTop
+    }
     func windowWillClose(_ notification: Notification) { remember(); AppController.shared.panelDidClose() }
     func windowDidMove(_ notification: Notification) { remember() }
     func windowDidResize(_ notification: Notification) { remember() }

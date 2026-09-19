@@ -34,7 +34,7 @@ final class InstrumentView: NSView {
         let root = midiPitchClass(model.showChordOnly ? model.chordNotes[0] : model.scale[0]) == pc
         let button = InstrumentNoteButton(midi: midi, spelling: spelling, highlighted: active, root: root, guitar: string >= 0, accent: TonicaAppearance.accent)
         button.string = string; button.fret = fret
-        button.onPlay = { [weak self] in self?.player.play([midi]) }
+        button.onPlay = { [weak self] in self?.player.play([[midi]]) }
         button.setAccessibilityLabel(string < 0 ? "Play \(spelling)\(midi / 12 - 1)" : "Play \(spelling), string \(6 - string), fret \(fret)")
         notes.append(button); addSubview(button)
     }
@@ -68,8 +68,11 @@ final class InstrumentView: NSView {
         for fret in 0...12 {
             let p = NSBezierPath(); p.lineWidth = fret == 0 ? 3 : 1
             p.move(to: NSPoint(x: CGFloat(fret + 1) * width, y: 28)); p.line(to: NSPoint(x: CGFloat(fret + 1) * width, y: 170)); p.stroke()
-            let text = fret == 0 ? "0" : String(fret)
-            (text as NSString).draw(at: NSPoint(x: CGFloat(fret) * width + width / 2 - 4, y: 2), withAttributes: [.font: NSFont.systemFont(ofSize: 10), .foregroundColor: NSColor.secondaryLabelColor])
+            // Inlay frets stand out, the way players find positions on a real neck.
+            let inlay = [3, 5, 7, 9, 12].contains(fret)
+            let attrs: [NSAttributedString.Key: Any] = [.font: NSFont.systemFont(ofSize: 10, weight: inlay ? .bold : .regular), .foregroundColor: inlay ? NSColor.labelColor : NSColor.tertiaryLabelColor]
+            let text = String(fret) as NSString
+            text.draw(at: NSPoint(x: CGFloat(fret) * width + (width - text.size(withAttributes: attrs).width) / 2, y: 2), withAttributes: attrs)
         }
     }
 }

@@ -11,7 +11,9 @@ final class AppModel {
     var instrument = Instrument(rawValue: UserDefaults.standard.string(forKey: "instrument") ?? "") ?? .piano {
         didSet { UserDefaults.standard.set(instrument.rawValue, forKey: "instrument"); changed() }
     }
-    var showChordOnly = false { didSet { changed() } }
+    var showChordOnly = UserDefaults.standard.bool(forKey: "showChordOnly") {
+        didSet { UserDefaults.standard.set(showChordOnly, forKey: "showChordOnly"); changed() }
+    }
     var keepOnTop = UserDefaults.standard.bool(forKey: "keepOnTop") {
         didSet { UserDefaults.standard.set(keepOnTop, forKey: "keepOnTop"); changed() }
     }
@@ -30,7 +32,8 @@ final class AppModel {
     var scale: [String] { isMinor ? slice.minorScaleNotes : slice.scaleNotes }
     var chords: [String] { isMinor ? slice.minorDiatonicTriads : slice.diatonicTriads }
     var numerals: [String] { isMinor ? slice.minorRomanNumerals : slice.diatonicRomanNumerals }
-    var chordNotes: [String] { [0, 2, 4].map { scale[(chordDegree + $0) % 7] } }
+    var chordNotes: [String] { triad(chordDegree) }
+    func triad(_ degree: Int) -> [String] { [0, 2, 4].map { scale[(degree + $0) % 7] } }
     var progressions: [ProgressionRecipe] { isMinor ? slice.minorProgressions : slice.majorProgressions }
     var displayedNotes: [String] { showChordOnly ? chordNotes : scale }
     func select(_ focus: SegmentFocus) {

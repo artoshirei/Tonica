@@ -18,6 +18,17 @@ final class CircleWheelView: NSView {
     override var intrinsicContentSize: NSSize { NSSize(width: 380, height: 380) }
     override func layout() { super.layout(); keys.forEach { $0.frame = bounds } }
     func refresh() { keys.forEach { $0.refresh() }; needsDisplay = true }
+    // One tracking area for the whole wheel, because every key's frame covers it.
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        trackingAreas.forEach(removeTrackingArea)
+        addTrackingArea(NSTrackingArea(rect: .zero, options: [.mouseMoved, .mouseEnteredAndExited, .activeAlways, .inVisibleRect], owner: self))
+    }
+    override func mouseMoved(with event: NSEvent) {
+        let point = convert(event.locationInWindow, from: nil)
+        keys.forEach { $0.isHovered = $0.contains(point) }
+    }
+    override func mouseExited(with event: NSEvent) { keys.forEach { $0.isHovered = false } }
     override func draw(_ dirtyRect: NSRect) {
         let center = NSPoint(x: bounds.midX, y: bounds.midY)
         let title = model.isMinor ? model.slice.minorLabel : model.slice.majorLabel
@@ -55,6 +66,8 @@ private final class WheelKey: NSButton {
         setAccessibilityLabel("\(ring == .major ? model.slices[index].majorLabel : model.slices[index].minorScaleNotes[0]) \(ring == .major ? "major" : "minor")")
     }
     required init?(coder: NSCoder) { fatalError() }
+    var isHovered = false { didSet { if isHovered != oldValue { needsDisplay = true } } }
+    func contains(_ point: NSPoint) -> Bool { radius > 0 && shape.contains(point) }
     private var selected: Bool { model.selectedFocus == SegmentFocus(index: index, ring: ring) }
     private var radius: CGFloat { min(bounds.width, bounds.height) / 2 - 4 }
     private var outer: CGFloat { radius * (ring == .major ? 1 : 0.71) }
@@ -69,9 +82,7 @@ private final class WheelKey: NSButton {
         return path
     }
     override func hitTest(_ point: NSPoint) -> NSView? {
-        guard radius > 0 else { return nil }
-        let local = convert(point, from: superview)
-        return shape.contains(local) ? self : nil
+        contains(convert(point, from: superview)) ? self : nil
     }
     func refresh() { setAccessibilityValue(selected ? "Selected" : ""); needsDisplay = true }
     @objc private func selectKey() { model.select(SegmentFocus(index: index, ring: ring)) }
@@ -79,7 +90,7 @@ private final class WheelKey: NSButton {
         guard radius > 0 else { return }
         let fill = selected ? TonicaAppearance.accent : model.slices[index].palette.withAlphaComponent(ring == .major ? 0.22 : 0.10)
         fill.setFill(); shape.fill()
-        if isHighlighted { NSColor.labelColor.withAlphaComponent(0.12).setFill(); shape.fill() }
+        if isHighlighted || (isHovered && !selected) { NSColor.labelColor.withAlphaComponent(isHighlighted ? 0.12 : 0.06).setFill(); shape.fill() }
         if window?.firstResponder === self {
             NSColor.keyboardFocusIndicatorColor.setStroke(); let p = shape; p.lineWidth = 3; p.stroke()
         }

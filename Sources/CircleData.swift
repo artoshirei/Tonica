@@ -133,7 +133,7 @@ extension CircleSlice {
             majorLabel: "C",
             minorLabel: "Am",
             diminishedLabel: "Bdim",
-            signature: "0 sharps / 0 flats",
+            signature: "No sharps or flats",
             scaleNotes: ["C", "D", "E", "F", "G", "A", "B"],
             palette: NSColor(srgbRed: 0.94, green: 0.82, blue: 0.35, alpha: 1)
         ),
